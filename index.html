@@ -169,12 +169,69 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-
 .calfsub{font-size:10px;color:var(--m2);margin-bottom:10px;line-height:1.6}
 .calfexn{font-size:12px;font-weight:600;padding:4px 0 6px;color:var(--txt)}
 
-/* ── ABS ── */
+/* ── HIIT LOGGER ── */
+.hiit-logbox{background:var(--s1);border:1px solid rgba(41,182,246,.2);border-radius:10px;
+  padding:12px 14px;margin-bottom:8px}
+.hiit-head{font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ac3);margin-bottom:10px}
+.hiit-modrow{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.hiit-mod{background:var(--s2);border:1px solid var(--bdr);color:var(--m2);
+  padding:4px 10px;border-radius:5px;font-size:10px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .15s}
+.hiit-mod:hover{border-color:var(--ac3);color:var(--ac3)}
+.hiit-mod.on{background:rgba(41,182,246,.12);border-color:var(--ac3);color:var(--ac3)}
+.hiit-durrow{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.hiit-durlbl{font-size:10px;color:var(--m2)}
+.hiit-durinp{background:var(--s2);border:1px solid var(--bdr);color:var(--txt);
+  padding:5px 7px;border-radius:4px;font-size:12px;font-family:'DM Mono',monospace;
+  width:60px;text-align:center}
+.hiit-durinp:focus{outline:none;border-color:var(--ac3)}
+.hiit-noteinp{background:var(--s2);border:1px solid var(--bdr);color:var(--txt);
+  padding:5px 8px;border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;
+  width:100%;margin-bottom:8px;resize:none}
+.hiit-noteinp:focus{outline:none;border-color:var(--ac3)}
+.hiit-noteinp::placeholder{color:#333}
+.hiit-donebtn{background:var(--s2);border:1px solid var(--bdr2);color:var(--m2);
+  padding:6px 14px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .15s}
+.hiit-donebtn:hover{border-color:var(--grn);color:var(--grn)}
+.hiit-donebtn.on{background:rgba(76,175,80,.1);border-color:var(--grn);color:var(--grn)}
+.hiit-knee-note{font-size:9px;color:rgba(255,87,34,.6);margin-bottom:8px;line-height:1.5;
+  background:rgba(255,87,34,.04);border:1px solid rgba(255,87,34,.15);border-radius:5px;padding:5px 8px}
+
+/* ── FLEXIBLE ABS ── */
 .absbox{background:var(--s1);border:1px solid rgba(41,182,246,.15);border-radius:10px;
   padding:12px;margin-bottom:8px}
 .absh{font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;
   color:var(--ac3);margin-bottom:3px}
 .abssub{font-size:10px;color:var(--m2);margin-bottom:10px;line-height:1.6}
+.abs-ex-row{display:flex;align-items:center;gap:5px;margin-bottom:5px}
+.abs-ex-sel{background:var(--s2);border:1px solid var(--bdr);color:var(--txt);
+  padding:4px 7px;border-radius:4px;font-size:11px;font-family:'DM Sans',sans-serif;
+  flex:1;cursor:pointer}
+.abs-ex-sel:focus{outline:none;border-color:var(--ac3)}
+.abs-ex-inp{background:var(--s2);border:1px solid var(--bdr);color:var(--txt);
+  padding:4px 5px;border-radius:4px;font-size:11px;font-family:'DM Mono',monospace;
+  width:52px;text-align:center}
+.abs-ex-inp:focus{outline:none;border-color:var(--ac3)}
+.abs-ex-lbl{font-size:8px;color:var(--m1);font-weight:700;letter-spacing:.05em;white-space:nowrap}
+.abs-ex-done{background:var(--s2);border:1px solid var(--bdr);color:var(--m1);
+  width:26px;height:26px;border-radius:4px;cursor:pointer;font-size:12px;
+  display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.abs-ex-done:hover{border-color:var(--grn);color:var(--grn)}
+.abs-ex-done.on{background:rgba(76,175,80,.12);border-color:var(--grn);color:var(--grn)}
+.abs-del{background:none;border:none;color:var(--m1);cursor:pointer;font-size:14px;
+  padding:0 3px;transition:color .15s;flex-shrink:0}
+.abs-del:hover{color:var(--red)}
+.abs-add-btn{background:var(--s2);border:1px dashed rgba(41,182,246,.3);color:var(--ac3);
+  padding:5px 12px;border-radius:5px;font-size:9px;font-weight:700;letter-spacing:.06em;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;width:100%;text-align:center;margin-top:3px}
+.abs-add-btn:hover{border-color:var(--ac3);background:rgba(41,182,246,.05)}
+.abs-done-btn{background:var(--s2);border:1px solid var(--bdr2);color:var(--m2);
+  padding:6px 14px;border-radius:6px;font-size:10px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .15s;margin-top:8px}
+.abs-done-btn:hover{border-color:var(--grn);color:var(--grn)}
+.abs-done-btn.on{background:rgba(76,175,80,.1);border-color:var(--grn);color:var(--grn)}
 .ablock{margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--bdr)}
 .ablock:last-child{margin-bottom:0;padding-bottom:0;border-bottom:none}
 .arl{font-size:8px;font-weight:900;letter-spacing:.12em;text-transform:uppercase;color:var(--m1);margin-bottom:4px}
@@ -197,6 +254,40 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-
   resize:none;font-family:'DM Sans',sans-serif;font-size:12px;line-height:1.6}
 .noteta:focus{outline:none}
 .noteta::placeholder{color:#252525}
+
+/* ── BODY MEASUREMENTS ── */
+.meas-section{margin-top:18px}
+.meas-toggle{display:flex;align-items:center;justify-content:space-between;
+  background:var(--s1);border:1px solid var(--bdr);border-radius:9px;
+  padding:10px 13px;cursor:pointer;transition:border-color .15s;margin-bottom:0}
+.meas-toggle:hover{border-color:var(--bdr2)}
+.meas-toggle-left{display:flex;align-items:center;gap:8px}
+.meas-toggle-title{font-size:12px;font-weight:700;color:var(--txt);letter-spacing:.02em}
+.meas-toggle-sub{font-size:9px;color:var(--m2)}
+.meas-chevron{font-size:12px;color:var(--m1);transition:transform .2s}
+.meas-chevron.open{transform:rotate(180deg)}
+.meas-body{background:var(--s1);border:1px solid var(--bdr);border-top:none;
+  border-radius:0 0 9px 9px;padding:10px 12px;overflow:hidden;
+  display:none}
+.meas-body.open{display:block}
+.meas-log-btn{background:var(--s2);border:1px solid var(--bdr2);color:var(--ac);
+  padding:6px 14px;border-radius:6px;font-size:10px;font-weight:800;letter-spacing:.06em;
+  cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .15s;margin-bottom:10px}
+.meas-log-btn:hover{background:rgba(200,255,0,.08);border-color:var(--ac)}
+.meas-table{width:100%;border-collapse:collapse;font-family:'DM Mono',monospace;font-size:11px}
+.meas-table th{font-size:8px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--m1);padding:3px 6px;text-align:left;border-bottom:1px solid var(--bdr)}
+.meas-table td{padding:5px 6px;border-top:1px solid var(--bdr);vertical-align:middle}
+.meas-table td:first-child{color:var(--m2);font-size:10px;white-space:nowrap}
+.meas-inp{background:var(--s2);border:1px solid var(--bdr);color:var(--txt);
+  padding:3px 5px;border-radius:4px;font-size:11px;font-family:'DM Mono',monospace;
+  width:58px;text-align:center}
+.meas-inp:focus{outline:none;border-color:var(--ac)}
+.meas-del{background:none;border:none;color:var(--m1);cursor:pointer;font-size:12px;
+  padding:2px 5px;border-radius:3px;transition:color .15s}
+.meas-del:hover{color:var(--red)}
+.meas-empty{font-size:10px;color:var(--m1);padding:8px 0;font-style:italic}
+.meas-unit-note{font-size:9px;color:var(--m1);margin-top:6px;line-height:1.6}
 
 /* ── WEIGHT TRACKER ── */
 .wttitle{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.05em}
@@ -495,9 +586,30 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-
     <div class="charttl">Bodyweight Trend (kg)</div>
     <canvas id="wch"></canvas>
   </div>
-  <div class="chartbox">
+  <div class="chartbox" style="margin-bottom:14px">
     <div class="charttl">Waist Trend (in)</div>
     <canvas id="waistChart"></canvas>
+  </div>
+
+  <!-- Body Measurements collapsible -->
+  <div class="meas-section">
+    <div class="meas-toggle" onclick="toggleMeasSection()">
+      <div class="meas-toggle-left">
+        <span style="font-size:14px">📏</span>
+        <div>
+          <div class="meas-toggle-title">BODY MEASUREMENTS</div>
+          <div class="meas-toggle-sub">Chest · Bicep · Thigh — log every 6–8 weeks</div>
+        </div>
+      </div>
+      <span class="meas-chevron" id="measChevron">▼</span>
+    </div>
+    <div class="meas-body" id="measBody">
+      <button class="meas-log-btn" onclick="addMeasRow()">＋ Log Today's Measurements</button>
+      <div id="measTable">
+        <div class="meas-empty">No measurements logged yet. Tap the button above to add your first entry.</div>
+      </div>
+      <div class="meas-unit-note">All measurements in cm (chest, bicep, thigh). Log when you notice visible changes — every 6–8 weeks is ideal during a cut.</div>
+    </div>
   </div>
 </div>
 
@@ -1432,58 +1544,65 @@ function renderWorkout(){
     H+=`</div>`;
   }
 
-  // Abs circuit — shown on Day 1 (Back/Mon) and Day 5 (Arms/Fri)
+  // Flexible Abs logger — Days with hasAbs
   if(day.hasAbs){
-    H+=`<div class="sdiv"><span class="sdivl">Ab Circuit — 3 Rounds</span></div>
+    const abk=`${KEY}abslog`;
+    const absData=ST.logs[abk]||{exs:[],done:false};
+    const absExs=absData.exs||[];
+    const absOpts=['Cable Crunch','Hanging Leg Raise','Hanging Side Oblique','Wood Chopper',
+      'Weighted Crunch','Ab Wheel Rollout','Dragon Flag','Toe Touch','Plank','Stomach Vacuum','Other'];
+    const absRowsHTML=absExs.length===0
+      ?'<div style="font-size:10px;color:var(--m1);padding:4px 0;font-style:italic">No exercises logged yet.</div>'
+      :absExs.map((ex,xi)=>`
+        <div class="abs-ex-row">
+          <select class="abs-ex-sel" onchange="absExField('${abk}',${xi},'name',this.value)">
+            ${absOpts.map(o=>`<option${o===ex.name?' selected':''}>${o}</option>`).join('')}
+          </select>
+          <div>
+            <div class="abs-ex-lbl">KG</div>
+            <input class="abs-ex-inp" type="number" inputmode="decimal" placeholder="—" value="${ex.kg||''}" oninput="absExField('${abk}',${xi},'kg',this.value)">
+          </div>
+          <div>
+            <div class="abs-ex-lbl">REPS</div>
+            <input class="abs-ex-inp" type="number" inputmode="numeric" placeholder="—" value="${ex.reps||''}" oninput="absExField('${abk}',${xi},'reps',this.value)">
+          </div>
+          <div>
+            <div class="abs-ex-lbl">SETS</div>
+            <input class="abs-ex-inp" type="number" inputmode="numeric" placeholder="—" value="${ex.sets||''}" oninput="absExField('${abk}',${xi},'sets',this.value)">
+          </div>
+          <button class="abs-del" onclick="absExDel('${abk}',${xi})" title="Remove">×</button>
+        </div>`).join('');
+
+    H+=`<div class="sdiv"><span class="sdivl">Abs — Log What You Did</span></div>
     <div class="absbox">
-      <div class="absh">🔥 Weighted Ab Circuit</div>
-      <div class="abssub">
-        <b style="color:var(--txt)">Cable Crunch → Hanging Leg Raise → Wood Chopper</b><br>
-        <b style="color:var(--txt)">No rest</b> between exercises · Rest <b style="color:var(--txt)">2–3 min</b> between rounds · 3 rounds
-      </div>`;
-    for(let r=0;r<3;r++){
-      const ck=`${KEY}abs${r}`;const cd=ST.circuits[ck];
-      H+=`<div class="ablock">
-        <div class="arl">Round ${r+1}</div>`;
-      ABCIRCUIT.forEach((x,xi)=>{
-        const lk=`${KEY}absr${r}x${xi}`;const lg=ST.logs[lk]||{};
-        H+=`<div class="aexr" style="flex-direction:column;align-items:stretch;gap:5px">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start">
-            <div><span class="aexn">${x.n}</span>
-            <div style="font-size:9px;color:var(--m1);margin-top:2px;line-height:1.5">${x.tip}</div></div>
-            <span class="aexrp">${x.r} reps</span>
-          </div>
-          <div style="display:grid;grid-template-columns:${x.repsOnly?'1fr':'1fr 1fr'} 28px;gap:4px;align-items:center">
-            ${x.repsOnly?'':`<input class="si${lg.weight?' hv':''}" type="number" inputmode="decimal" placeholder="kg" value="${lg.weight||''}" oninput="alf('${lk}','weight',this.value)" style="font-size:12px">`}
-            <input class="si${lg.reps?' hv':''}" type="number" inputmode="numeric" placeholder="reps" value="${lg.reps||''}" oninput="alf('${lk}','reps',this.value)" style="font-size:12px">
-            <button class="ck${lg.done?' on':''}" id="ac_${lk}" onclick="atick('${lk}',this)">✓</button>
-          </div>
-        </div>`;
-      });
-      H+=`<button class="acbtn${cd?' on':''}" style="margin-top:6px" onclick="tc('${ck}',this)">${cd?'✓ Round Done':'Mark Round Done'}</button>
-      </div>`;
-    }
-    H+=`</div>`;
+      <div class="absh">🔥 Ab Work — Freestyle Log</div>
+      <div class="abssub">Log any abs exercises you do — no fixed circuit. Pick what feels right on the day.</div>
+      <div id="absrows_${abk}">${absRowsHTML}</div>
+      <button class="abs-add-btn" onclick="absExAdd('${abk}')">＋ Add Exercise</button>
+      <button class="abs-done-btn${absData.done?' on':''}" onclick="absDone('${abk}',this)">${absData.done?'✓ Abs Done':'Mark Abs Done'}</button>
+    </div>`;
   }
 
-  // HIIT — on Day 1 (Back) and Day 5 (Arms)
+  // HIIT logger — on Chest (Tue) and Shoulders (Thu)
   if(day.hasHiit){
-    H+=`<div class="sdiv"><span class="sdivl">HIIT — Incline Treadmill 15 min</span></div>
-    <div style="background:var(--s1);border:1px solid rgba(41,182,246,.2);border-radius:10px;padding:12px 14px;margin-bottom:8px">
-      <div style="font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--ac3);margin-bottom:10px">🏃 Incline Walk — 15 Minutes</div>
-      <div style="display:grid;grid-template-columns:auto 1fr 1fr 1fr;gap:4px 10px;font-size:11px;font-family:'DM Mono',monospace">
-        <div style="font-size:8px;font-weight:900;letter-spacing:.1em;color:var(--m1)">MIN</div>
-        <div style="font-size:8px;font-weight:900;letter-spacing:.1em;color:var(--m1)">PHASE</div>
-        <div style="font-size:8px;font-weight:900;letter-spacing:.1em;color:var(--m1)">INCLINE</div>
-        <div style="font-size:8px;font-weight:900;letter-spacing:.1em;color:var(--m1)">SPEED</div>
-        <div style="color:var(--m2)">0–2</div><div style="color:var(--m2)">Warm-up</div><div style="color:var(--m2)">3%</div><div style="color:var(--m2)">5.5 kmph</div>
-        <div style="color:var(--ac3);font-weight:700">2–12</div><div style="color:var(--ac3);font-weight:700">Work</div><div style="color:var(--ac3);font-weight:700">12%</div><div style="color:var(--ac3);font-weight:700">6.5 kmph</div>
-        <div style="color:var(--m2)">12–15</div><div style="color:var(--m2)">Cool-down</div><div style="color:var(--m2)">3%</div><div style="color:var(--m2)">5.0 kmph</div>
+    const hk=`${KEY}hiit`;
+    const hd=ST.logs[hk]||{};
+    const mods=['Incline Walk','Cycling','Cross Trainer'];
+    H+=`<div class="sdiv"><span class="sdivl">HIIT — Cardio Session</span></div>
+    <div class="hiit-logbox">
+      <div class="hiit-head">🏃 HIIT — Log Your Session</div>
+      <div class="hiit-knee-note">⚠️ Chondromalacia: prefer Cycling > Cross Trainer > Incline Walk. Avoid steep incline if knee pain.</div>
+      <div style="font-size:9px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--m1);margin-bottom:5px">Modality</div>
+      <div class="hiit-modrow">
+        ${mods.map(m=>`<button class="hiit-mod${hd.mod===m?' on':''}" onclick="hiitMod('${hk}','${m}',this)">${m}</button>`).join('')}
       </div>
-      <div style="margin-top:10px;font-size:10px;color:var(--m1);line-height:1.7">
-        💡 Progression: when work phase feels comfortable → increase speed 0.5 kmph · Max 8 kmph then increase incline<br>
-        Rest 5 min after main work before starting HIIT
+      <div class="hiit-durrow">
+        <span class="hiit-durlbl">Duration (min):</span>
+        <input class="hiit-durinp" type="number" inputmode="numeric" placeholder="15" value="${hd.dur||''}" oninput="hiitField('${hk}','dur',this.value)">
+        <span style="font-size:10px;color:var(--m1)">target: 15</span>
       </div>
+      <textarea class="hiit-noteinp" rows="2" placeholder="Notes: speed, incline, how it felt…" oninput="hiitField('${hk}','note',this.value)">${hd.note||''}</textarea>
+      <button class="hiit-donebtn${hd.done?' on':''}" onclick="hiitDone('${hk}',this)">${hd.done?'✓ HIIT Done':'Mark HIIT Done'}</button>
     </div>`;
   }
 
@@ -1648,6 +1767,128 @@ function ts(lk,ek,btn){
 }
 
 function tc(ck,btn){ST.circuits[ck]=!ST.circuits[ck];save();btn.classList.toggle('on',ST.circuits[ck]);btn.textContent=ST.circuits[ck]?'✓ Completed':'Mark Round Done';}
+
+// ── HIIT LOGGER ──────────────────────────────────
+function hiitMod(hk,mod,btn){
+  if(!ST.logs[hk])ST.logs[hk]={};
+  ST.logs[hk].mod=mod;save();
+  btn.closest('.hiit-modrow').querySelectorAll('.hiit-mod').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+function hiitField(hk,field,val){
+  if(!ST.logs[hk])ST.logs[hk]={};
+  ST.logs[hk][field]=val;save();
+}
+function hiitDone(hk,btn){
+  if(!ST.logs[hk])ST.logs[hk]={};
+  ST.logs[hk].done=!ST.logs[hk].done;save();
+  btn.classList.toggle('on',ST.logs[hk].done);
+  btn.textContent=ST.logs[hk].done?'✓ HIIT Done':'Mark HIIT Done';
+}
+
+// ── FLEXIBLE ABS ─────────────────────────────────
+function getAbsData(abk){
+  if(!ST.logs[abk])ST.logs[abk]={exs:[],done:false};
+  if(!ST.logs[abk].exs)ST.logs[abk].exs=[];
+  return ST.logs[abk];
+}
+function absExAdd(abk){
+  const d=getAbsData(abk);
+  d.exs.push({name:'Cable Crunch',kg:'',reps:'',sets:''});
+  save();reRenderAbs(abk);
+}
+function absExDel(abk,idx){
+  const d=getAbsData(abk);
+  d.exs.splice(idx,1);save();reRenderAbs(abk);
+}
+function absExField(abk,idx,field,val){
+  const d=getAbsData(abk);
+  if(!d.exs[idx])return;
+  d.exs[idx][field]=val;save();
+}
+function absDone(abk,btn){
+  const d=getAbsData(abk);
+  d.done=!d.done;save();
+  btn.classList.toggle('on',d.done);
+  btn.textContent=d.done?'✓ Abs Done':'Mark Abs Done';
+}
+function reRenderAbs(abk){
+  const container=document.getElementById('absrows_'+abk);
+  if(!container)return;
+  const d=getAbsData(abk);
+  const absOpts=['Cable Crunch','Hanging Leg Raise','Hanging Side Oblique','Wood Chopper',
+    'Weighted Crunch','Ab Wheel Rollout','Dragon Flag','Toe Touch','Plank','Stomach Vacuum','Other'];
+  if(!d.exs||d.exs.length===0){
+    container.innerHTML='<div style="font-size:10px;color:var(--m1);padding:4px 0;font-style:italic">No exercises logged yet.</div>';
+    return;
+  }
+  container.innerHTML=d.exs.map((ex,xi)=>`
+    <div class="abs-ex-row">
+      <select class="abs-ex-sel" onchange="absExField('${abk}',${xi},'name',this.value)">
+        ${absOpts.map(o=>`<option${o===ex.name?' selected':''}>${o}</option>`).join('')}
+      </select>
+      <div><div class="abs-ex-lbl">KG</div>
+        <input class="abs-ex-inp" type="number" inputmode="decimal" placeholder="—" value="${ex.kg||''}" oninput="absExField('${abk}',${xi},'kg',this.value)">
+      </div>
+      <div><div class="abs-ex-lbl">REPS</div>
+        <input class="abs-ex-inp" type="number" inputmode="numeric" placeholder="—" value="${ex.reps||''}" oninput="absExField('${abk}',${xi},'reps',this.value)">
+      </div>
+      <div><div class="abs-ex-lbl">SETS</div>
+        <input class="abs-ex-inp" type="number" inputmode="numeric" placeholder="—" value="${ex.sets||''}" oninput="absExField('${abk}',${xi},'sets',this.value)">
+      </div>
+      <button class="abs-del" onclick="absExDel('${abk}',${xi})" title="Remove">×</button>
+    </div>`).join('');
+}
+
+// ── BODY MEASUREMENTS ────────────────────────────
+function toggleMeasSection(){
+  const body=document.getElementById('measBody');
+  const chev=document.getElementById('measChevron');
+  const open=body.classList.toggle('open');
+  chev.classList.toggle('open',open);
+  if(open)renderMeasTable();
+}
+function getMeasRows(){
+  return ST.weights.measRows||[];
+}
+function saveMeasRows(rows){
+  ST.weights.measRows=rows;save();
+}
+function addMeasRow(){
+  const rows=getMeasRows();
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  rows.push({date:dateStr,chest:'',bicep:'',thigh:''});
+  saveMeasRows(rows);renderMeasTable();
+}
+function measField(idx,field,val){
+  const rows=getMeasRows();
+  if(!rows[idx])return;
+  rows[idx][field]=val;saveMeasRows(rows);
+}
+function measDel(idx){
+  const rows=getMeasRows();
+  rows.splice(idx,1);saveMeasRows(rows);renderMeasTable();
+}
+function renderMeasTable(){
+  const container=document.getElementById('measTable');
+  if(!container)return;
+  const rows=getMeasRows();
+  if(!rows||rows.length===0){
+    container.innerHTML='<div class="meas-empty">No measurements logged yet. Tap the button above to add your first entry.</div>';
+    return;
+  }
+  container.innerHTML=`<table class="meas-table">
+    <tr><th>DATE</th><th>CHEST (cm)</th><th>BICEP (cm)</th><th>THIGH (cm)</th><th></th></tr>
+    ${rows.map((r,i)=>`<tr>
+      <td>${r.date}</td>
+      <td><input class="meas-inp" type="number" inputmode="decimal" placeholder="—" value="${r.chest||''}" oninput="measField(${i},'chest',this.value)"></td>
+      <td><input class="meas-inp" type="number" inputmode="decimal" placeholder="—" value="${r.bicep||''}" oninput="measField(${i},'bicep',this.value)"></td>
+      <td><input class="meas-inp" type="number" inputmode="decimal" placeholder="—" value="${r.thigh||''}" oninput="measField(${i},'thigh',this.value)"></td>
+      <td><button class="meas-del" onclick="measDel(${i})" title="Delete row">✕</button></td>
+    </tr>`).join('')}
+  </table>`;
+}
 
 function toggleDone(key){
   ST.done[key]=!ST.done[key];save();
@@ -1998,16 +2239,19 @@ function generateExportText(){
       for(let s=0;s<c.s;s++){const lg=ST.logs[`${KEY}calf${ci}s${s}`];if(lg&&lg.weight)sets.push(`${lg.weight}×${lg.reps||'?'}`);}
       if(sets.length)dayLog.push(`Calf:${sets.join('/')}`);
     });
-    // Abs
+    // Abs (flexible logger)
     if(day.hasAbs){
-      for(let round=0;round<3;round++){
-        ABCIRCUIT.forEach((x,xi)=>{
-          const lk=`${KEY}absr${round}x${xi}`;const lg=ST.logs[lk];
-          if(lg&&(lg.weight||lg.reps)){
-            const entry=x.repsOnly?`${x.n.split(' ')[0]}R${round+1}:${lg.reps}reps`:`${x.n.split(' ')[0]}R${round+1}:${lg.weight}×${lg.reps||'?'}`;
-            dayLog.push(entry);
-          }
-        });
+      const ad=ST.logs[KEY+'abslog'];
+      if(ad&&ad.exs&&ad.exs.length>0){
+        const absEntries=ad.exs.filter(e=>e.name&&(e.reps||e.sets)).map(e=>`${e.name.split(' ')[0]}:${e.kg?e.kg+'kg×':''}${e.reps||'?'}reps${e.sets?'×'+e.sets+'sets':''}`);
+        if(absEntries.length)dayLog.push(`Abs:${absEntries.join('/')}`);
+      }
+    }
+    // HIIT (logger)
+    if(day.hasHiit){
+      const hd=ST.logs[KEY+'hiit'];
+      if(hd&&(hd.mod||hd.dur||hd.done)){
+        dayLog.push(`HIIT:${hd.mod||'?'}${hd.dur?'/'+hd.dur+'min':''}${hd.done?'/✓':''}`);
       }
     }
     if(dayLog.length)thisWkSets.push(`[${dayNames[d]}]\n${dayLog.join(', ')}`);
@@ -2040,9 +2284,17 @@ function generateExportText(){
   PHASES.forEach((phase,pIdx)=>{
     for(let wk=0;wk<phase.weeks;wk++){
       phase.days.forEach((day,d)=>{
-        const done=!!ST.done[dk(pIdx,wk,d)];
-        if(day.hasHiit){hiitTot++;if(done)hiitDone++;}
-        if(day.hasAbs){absTot++;if(done)absDone++;}
+        const KEY2=dk(pIdx,wk,d);
+        if(day.hasHiit){
+          hiitTot++;
+          const hd=ST.logs[KEY2+'hiit'];
+          if(hd&&hd.done)hiitDone++;
+        }
+        if(day.hasAbs){
+          absTot++;
+          const ad=ST.logs[KEY2+'abslog'];
+          if(ad&&ad.done)absDone++;
+        }
       });
     }
   });

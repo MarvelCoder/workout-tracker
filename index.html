@@ -1952,13 +1952,25 @@ function buildNoteRowsHTML(key,rows){
     </div>`).join('');
 }
 function getPrevWeekNoteKey(ph,wk,day){
-  let prevPh=ph,prevWk=wk-1;
-  if(prevWk<0){
-    let pp=ph-1;
-    while(pp>=0){if(!PHASES[pp].isDeload){prevPh=pp;prevWk=PHASES[pp].weeks-1;break;}pp--;}
-    if(prevWk<0)return null;
+  // Walk back through weeks until we find one with actual notes
+  let curPh=ph,curWk=wk-1;
+  while(true){
+    if(curWk<0){
+      // Step back to previous non-deload phase
+      let pp=curPh-1,found=false;
+      while(pp>=0){
+        if(!PHASES[pp].isDeload){curPh=pp;curWk=PHASES[pp].weeks-1;found=true;break;}
+        pp--;
+      }
+      if(!found)return null;
+    }
+    const key=dk(curPh,curWk,day);
+    const rows=ST.notes[key];
+    const hasNotes=Array.isArray(rows)?rows.some(r=>r.trim()):
+      (typeof rows==='string'&&rows.trim().length>0);
+    if(hasNotes)return key;
+    curWk--;
   }
-  return dk(prevPh,prevWk,day);
 }
 
 // ── Copy previous week's notes into current week ──────────

@@ -97,6 +97,14 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-
   font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
 .mdbtn:hover{border-color:var(--grn);color:var(--grn)}
 .mdbtn.on{background:rgba(76,175,80,.1);border-color:var(--grn);color:var(--grn)}
+.rdbtn{flex-shrink:0;background:var(--s2);border:1px solid var(--bdr2);color:var(--m2);
+  padding:7px 13px;border-radius:7px;font-size:11px;font-weight:700;cursor:pointer;
+  font-family:'DM Sans',sans-serif;transition:all .15s;white-space:nowrap}
+.rdbtn:hover{border-color:#888;color:var(--txt)}
+.rdbtn.on{background:rgba(100,100,100,.15);border-color:#666;color:#aaa}
+.dchip.rest{border-color:#555;background:rgba(100,100,100,.08)}
+.dchip.rest .dn{color:#666}
+.wd.rest{background:#444}
 
 /* ── SECTION DIVIDERS ── */
 .sdiv{display:flex;align-items:center;gap:7px;margin:16px 0 8px}
@@ -1248,7 +1256,7 @@ const db = firebase.database();
 // ═══════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════
-let ST={ph:0,wk:0,day:0,logs:{},done:{},circuits:{},notes:{},weights:{}};
+let ST={ph:0,wk:0,day:0,logs:{},done:{},rest:{},circuits:{},notes:{},weights:{}};
 let currentUID = null;
 let dbRef = null;
 let saveTimer = null;
@@ -1304,6 +1312,7 @@ function loadFromFirebase(){
         day: data.day||0,
         logs: data.logs||{},
         done: data.done||{},
+        rest: data.rest||{},
         circuits: data.circuits||{},
         notes: data.notes||{},
         weights: data.weights||{}
@@ -1321,6 +1330,7 @@ function loadFromFirebase(){
           day: data.day??ST.day,
           logs: data.logs||ST.logs,
           done: data.done||ST.done,
+          rest: data.rest||ST.rest,
           circuits: data.circuits||ST.circuits,
           notes: data.notes||ST.notes,
           weights: data.weights||ST.weights
@@ -1343,6 +1353,7 @@ function save(){
     dbRef.set({
       ph:ST.ph, wk:ST.wk, day:ST.day,
       logs:ST.logs, done:ST.done,
+      rest:ST.rest||{},
       circuits:ST.circuits, notes:ST.notes,
       weights:ST.weights,
       updatedAt: Date.now()
@@ -1370,9 +1381,11 @@ const dk=(ph,wk,day)=>`p${ph}w${wk}d${day}`;
 const ek=(d,ei)=>`${d}e${ei}`;
 const sk=(e,s)=>`${e}s${s}`;
 
-function dayDone(ph,wk,d){return!!ST.done[dk(ph,wk,d)]}
+function isRest(ph,wk,d){return!!ST.rest[dk(ph,wk,d)]}
+function dayDone(ph,wk,d){return!!ST.done[dk(ph,wk,d)]||isRest(ph,wk,d)}
 function weekDone(ph,wk){return PHASES[ph].days.every((_,d)=>dayDone(ph,wk,d))}
 function dayProg(ph,wk,day){
+  if(isRest(ph,wk,day))return 100;
   const d=dk(ph,wk,day),p=PHASES[ph].days[day];
   let tot=0,dn=0;
   p.exs.forEach((x,ei)=>{for(let s=0;s<x.sets;s++){tot++;if(ST.logs[sk(ek(d,ei),s)]?.done)dn++;}});
@@ -1421,7 +1434,7 @@ function renderWeeks(){
   const lbl=document.createElement('span');lbl.className='wlbl';lbl.textContent='WEEK';bar.appendChild(lbl);
   for(let w=0;w<p.weeks;w++){
     const wd=weekDone(ST.ph,w);const wa=w===ST.wk;
-    const dots=p.days.map((_,d)=>`<div class="wd${dayDone(ST.ph,w,d)?' ok':''}"></div>`).join('');
+    const dots=p.days.map((_,d)=>`<div class="wd${isRest(ST.ph,w,d)?' rest':dayDone(ST.ph,w,d)?' ok':''}"></div>`).join('');
     const b=document.createElement('button');
     b.className='wchip'+(wa?' on':'')+(wd?' all-done':'');
     b.innerHTML=`<span class="wn">${w+1}</span><div class="wdots">${dots}</div>`;
@@ -1435,10 +1448,10 @@ function renderDays(){
   const p=PHASES[ST.ph];
   const icons=['BACK','CHEST','LEGS','DELTS','ARMS'];
   p.days.forEach((d,i)=>{
-    const dn=dayDone(ST.ph,ST.wk,i);const ia=i===ST.day;
+    const dn=dayDone(ST.ph,ST.wk,i);const ia=i===ST.day;const rd=isRest(ST.ph,ST.wk,i);
     const b=document.createElement('button');
-    b.className='dchip'+(ia?' on':'')+(dn?' done':'');
-    b.innerHTML=`<span class="dn">${i+1}</span>${icons[i]}`;
+    b.className='dchip'+(ia?' on':'')+(rd?' rest':dn?' done':'');
+    b.innerHTML=`<span class="dn">${rd?'🏖️':i+1}</span>${rd?'REST':icons[i]}`;
     b.onclick=()=>{ST.day=i;save();renderDays();renderWorkout()};
     bar.appendChild(b);
   });
@@ -1447,7 +1460,10 @@ function renderDays(){
 function renderOverview(){
   const p=PHASES[ST.ph];
   let tot=0,dn=0;
-  for(let w=0;w<p.weeks;w++)p.days.forEach((_,d)=>{tot++;if(dayDone(ST.ph,w,d))dn++;});
+  for(let w=0;w<p.weeks;w++)p.days.forEach((_,d)=>{
+    if(isRest(ST.ph,w,d))return; // exclude rest days from total
+    tot++;if(dayDone(ST.ph,w,d))dn++;
+  });
   const pct=tot?Math.round(dn/tot*100):0;
   document.getElementById('ostrip').innerHTML=`
     <div class="opill"><b>${p.label}</b></div>
@@ -1474,7 +1490,10 @@ function renderWorkout(){
       <div class="whs">${wlabel}${p.label} · ${day.sub}</div>
       <div class="wpb"><div class="wpbi" id="pbar" style="width:${prog}%"></div></div>
     </div>
-    <button class="mdbtn${isDone?' on':''}" onclick="toggleDone('${KEY}')">${isDone?'✓ Done':'Mark Done'}</button>
+    <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
+      <button class="rdbtn${isRest(ST.ph,ST.wk,ST.day)?' on':''}" onclick="toggleRest('${KEY}')">🏖️${isRest(ST.ph,ST.wk,ST.day)?' Rest Day':'Rest Day'}</button>
+      <button class="mdbtn${isDone&&!isRest(ST.ph,ST.wk,ST.day)?' on':''}" onclick="toggleDone('${KEY}')" ${isRest(ST.ph,ST.wk,ST.day)?'style="opacity:.35;pointer-events:none"':''}>${isDone&&!isRest(ST.ph,ST.wk,ST.day)?'✓ Done':'Mark Done'}</button>
+    </div>
   </div>`;
 
   // Day note (e.g. rep range explanation)
@@ -1896,6 +1915,14 @@ function toggleDone(key){
   const b=event.target;b.classList.toggle('on',ST.done[key]);b.textContent=ST.done[key]?'✓ Done':'Mark Done';
   renderWeeks();renderDays();renderOverview();
 }
+function toggleRest(key){
+  if(!ST.rest)ST.rest={};
+  ST.rest[key]=!ST.rest[key];
+  // Clear normal done state when marking as rest
+  if(ST.rest[key])ST.done[key]=false;
+  save();
+  renderWeeks();renderDays();renderWorkout();
+}
 
 // ── NOTES (structured rows) ──────────────────────────────
 // Notes stored as array of strings. Backward-compat: if existing value is a plain string,
@@ -2181,7 +2208,10 @@ function generateExportText(){
 
   // Phase completion
   let tot=0,dn=0;
-  for(let w=0;w<ph.weeks;w++)ph.days.forEach((_,d)=>{tot++;if(ST.done[dk(ST.ph,w,d)])dn++;});
+  for(let w=0;w<ph.weeks;w++)ph.days.forEach((_,d)=>{
+    if(isRest(ST.ph,w,d))return;
+    tot++;if(ST.done[dk(ST.ph,w,d)])dn++;
+  });
   const phasePct=tot?Math.round(dn/tot*100):0;
 
   // Sessions done per day this week
@@ -2298,12 +2328,12 @@ function generateExportText(){
     for(let wk=0;wk<phase.weeks;wk++){
       phase.days.forEach((day,d)=>{
         const KEY2=dk(pIdx,wk,d);
-        if(day.hasHiit){
+        if(day.hasHiit&&!isRest(pIdx,wk,d)){
           hiitTot++;
           const hd=ST.logs[KEY2+'hiit'];
           if(hd&&hd.done)hiitDone++;
         }
-        if(day.hasAbs){
+        if(day.hasAbs&&!isRest(pIdx,wk,d)){
           absTot++;
           const ad=ST.logs[KEY2+'abslog'];
           if(ad&&ad.done)absDone++;

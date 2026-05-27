@@ -1637,7 +1637,8 @@ function renderWorkout(){
       </div>`).join('')
     :`<div class="note-empty">No notes yet — tap + to add one</div>`;
 
-  const hasPrevNotes=!!(prevNoteText&&prevNoteText.trim());
+  // Button shows whenever any previous week has notes — independent of reference box
+  const hasPrevNotes=!!prevNoteKey;
   H+=`<div class="notebox">
     <div class="notelbl-row">
       <div class="notelbl">Session Notes — ${p.label} · Week ${ST.wk+1} · ${day.sub}</div>

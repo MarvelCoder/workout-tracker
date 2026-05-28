@@ -297,46 +297,6 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-
 .meas-empty{font-size:10px;color:var(--m1);padding:8px 0;font-style:italic}
 .meas-unit-note{font-size:9px;color:var(--m1);margin-top:6px;line-height:1.6}
 
-
-/* ── ABS VISIBILITY ESTIMATOR ── */
-.est-box{background:var(--s1);border:1px solid rgba(200,255,0,.15);border-radius:10px;padding:14px;margin-bottom:14px}
-.est-header{font-size:8px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:var(--m1);margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
-.est-header span{color:var(--ac);font-size:9px}
-.est-kpi-row{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
-.est-kpi{background:var(--s2);border:1px solid var(--bdr);border-radius:7px;padding:8px 10px;text-align:center}
-.est-kpi-lbl{font-size:7px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;color:var(--m1);margin-bottom:3px}
-.est-kpi-val{font-family:'Bebas Neue',sans-serif;font-size:20px;line-height:1;color:var(--txt)}
-.est-kpi-sub{font-size:8px;color:var(--m2);margin-top:1px}
-.est-kpi.ac .est-kpi-val{color:var(--ac)}
-.est-kpi.ac2 .est-kpi-val{color:var(--ac2)}
-.est-kpi.ac3 .est-kpi-val{color:var(--ac3)}
-.est-bar-section{margin-bottom:12px}
-.est-bar-labels{display:flex;justify-content:space-between;font-size:9px;color:var(--m2);margin-bottom:4px;font-family:'DM Mono',monospace}
-.est-bar-track{background:var(--s3);border-radius:5px;height:10px;position:relative;overflow:visible}
-.est-bar-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--ac2) 0%,var(--ac) 100%);transition:width .5s;position:relative}
-.est-bar-now{position:absolute;right:-1px;top:-4px;bottom:-4px;width:3px;background:#fff;border-radius:2px;opacity:.9}
-.est-bar-target{position:absolute;top:-5px;bottom:-5px;width:2px;background:var(--ac);border-radius:2px;opacity:.5}
-.est-milestones{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
-.est-ms{display:flex;align-items:center;gap:8px;padding:7px 10px;background:var(--s2);border:1px solid var(--bdr);border-radius:6px}
-.est-ms-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-.est-ms-label{font-size:11px;flex:1}
-.est-ms-val{font-size:10px;font-family:'DM Mono',monospace;color:var(--m2);text-align:right}
-.est-ms.reached .est-ms-label{color:var(--grn)}
-.est-ms.reached .est-ms-dot{background:var(--grn)}
-.est-ms.next .est-ms-dot{background:var(--ac);box-shadow:0 0 6px rgba(200,255,0,.4)}
-.est-ms.next .est-ms-label{color:var(--ac)}
-.est-ms.future .est-ms-dot{background:var(--m1)}
-.est-ms.future .est-ms-label{color:var(--m2)}
-.est-stall{background:rgba(255,87,34,.05);border:1px solid rgba(255,87,34,.2);border-radius:6px;padding:8px 10px;font-size:10px;color:rgba(255,87,34,.9);line-height:1.6;margin-bottom:10px}
-.est-trend-row{display:flex;gap:6px;margin-bottom:10px}
-.est-trend-pill{flex:1;background:var(--s2);border:1px solid var(--bdr);border-radius:6px;padding:6px 9px;font-size:9px;text-align:center}
-.est-trend-pill b{display:block;font-family:'DM Mono',monospace;font-size:12px;margin-top:2px}
-.est-trend-pill.good b{color:var(--grn)}
-.est-trend-pill.warn b{color:var(--ac2)}
-.est-trend-pill.stall b{color:var(--m1)}
-.est-footer{font-size:9px;color:var(--m1);line-height:1.6;font-style:italic}
-.est-insufficient{font-size:11px;color:var(--m1);padding:12px 0;text-align:center;font-style:italic}
-
 /* ── WEIGHT TRACKER ── */
 .wttitle{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:.05em}
 .wtsub{font-size:11px;color:var(--m2);margin-top:2px;margin-bottom:16px}
@@ -637,12 +597,6 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-
   <div class="chartbox" style="margin-bottom:14px">
     <div class="charttl">Waist Trend (in)</div>
     <canvas id="waistChart"></canvas>
-  </div>
-
-  <!-- Abs Visibility Estimator -->
-  <div class="est-box">
-    <div class="est-header">🎯 ABS VISIBILITY ESTIMATOR <span>auto-updates as you log</span></div>
-    <div id="estContent"><div class="est-insufficient">Log at least 3 weeks of weight + waist data to unlock your projection.</div></div>
   </div>
 
   <!-- Body Measurements collapsible -->
@@ -1448,7 +1402,7 @@ function showPg(n){
   document.getElementById('pg-gym').classList.toggle('off',n!=='gym');
   document.querySelectorAll('.ntab').forEach((b,i)=>b.classList.toggle('on',
     (i===0&&n==='workout')||(i===1&&n==='weight')||(i===2&&n==='progress')||(i===3&&n==='gym')));
-  if(n==='weight'){renderWeight();renderEstimator();}
+  if(n==='weight')renderWeight();
   if(n==='progress')renderProgressPage();
   if(n==='gym'){renderGymProgress();setTimeout(drawGpChart,50);}
 }
@@ -2121,178 +2075,6 @@ function getPrevWeekCalfData(ph,wk,day,ci,sets){
   return Array.from({length:sets},(_,s)=>ST.logs[`${prevDK}calf${ci}s${s}`]||null);
 }
 
-
-// ═══════════════════════════════════════════════
-// ABS VISIBILITY ESTIMATOR
-// ═══════════════════════════════════════════════
-function renderEstimator(){
-  const el=document.getElementById('estContent');
-  if(!el)return;
-
-  // Collect logged weight + waist data points
-  const wpts=[],waistPts=[];
-  for(let w=1;w<=54;w++){
-    const wv=parseFloat(ST.weights['w'+w]);
-    const wt=parseFloat(ST.weights['waist'+w]);
-    if(!isNaN(wv))wpts.push({w,v:wv});
-    if(!isNaN(wt))waistPts.push({w,v:wt});
-  }
-
-  if(wpts.length<3||waistPts.length<3){
-    el.innerHTML='<div class="est-insufficient">Log at least 3 weeks of weight + waist data to unlock your projection.</div>';
-    return;
-  }
-
-  const curWt=wpts[wpts.length-1].v;
-  const curWaist=waistPts[waistPts.length-1].v;
-
-  // ── Rate calculations ─────────────────────────────────
-  // Overall rate (week 1 to latest)
-  const totalWks=wpts[wpts.length-1].w - wpts[0].w || 1;
-  const overallWtRate=(wpts[0].v - wpts[wpts.length-1].v)/totalWks; // kg/wk lost (positive=losing)
-  const totalWaistWks=waistPts[waistPts.length-1].w - waistPts[0].w || 1;
-  const overallWaistRate=(waistPts[0].v - waistPts[waistPts.length-1].v)/totalWaistWks; // in/wk
-
-  // Recent 4-week trend
-  const recent4wt=wpts.slice(-4);
-  const recent4waist=waistPts.slice(-4);
-  const recentWtRate=recent4wt.length>=2
-    ?(recent4wt[0].v - recent4wt[recent4wt.length-1].v)/(recent4wt[recent4wt.length-1].w - recent4wt[0].w || 1)
-    :overallWtRate;
-  const recentWaistRate=recent4waist.length>=2
-    ?(recent4waist[0].v - recent4waist[recent4waist.length-1].v)/(recent4waist[recent4waist.length-1].w - recent4waist[0].w || 1)
-    :overallWaistRate;
-
-  // Personal kg-per-inch ratio from own data
-  const totalWtLost=wpts[0].v - wpts[wpts.length-1].v;
-  const totalWaistLost=waistPts[0].v - waistPts[waistPts.length-1].v;
-  const kgPerInch=totalWaistLost>0.1?(totalWtLost/totalWaistLost).toFixed(1):'~2.5';
-
-  // ── Targets ───────────────────────────────────────────
-  // Visible upper abs ~33in, visible lower abs ~31.5in, full six-pack ~30in (for ~5'10" male)
-  const milestones=[
-    {label:'Upper abs visible',waist:33.0,emoji:'💪'},
-    {label:'Lower abs visible',waist:31.5,emoji:'🔥'},
-    {label:'Full six-pack',waist:30.0,emoji:'⚡'},
-  ];
-
-  // Use recent rate if meaningful, else overall; use 0.05in/wk floor to avoid div/0
-  const activeWaistRate=Math.max(recentWaistRate, 0.001);
-  const activeWtRate=Math.max(recentWtRate, 0.001);
-
-  // ── Stall detection ───────────────────────────────────
-  const last3waist=waistPts.slice(-3);
-  const waistStalled=last3waist.length>=3&&
-    Math.abs(last3waist[0].v - last3waist[last3waist.length-1].v)<0.2;
-
-  // ── Build milestone rows ──────────────────────────────
-  function weeksTo(targetWaist){
-    const gap=curWaist-targetWaist;
-    if(gap<=0)return 0;
-    return Math.round(gap/activeWaistRate);
-  }
-  function dateIn(weeks){
-    const d=new Date();d.setDate(d.getDate()+weeks*7);
-    return d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
-  }
-
-  const msHTML=milestones.map(ms=>{
-    const wks=weeksTo(ms.waist);
-    const reached=curWaist<=ms.waist;
-    const isNext=!reached&&milestones.filter(m=>curWaist>m.waist).length===milestones.indexOf(ms)||
-      (!reached&&milestones.every(m2=>m2.waist>=ms.waist||curWaist<=m2.waist));
-    // Determine which is the "next" target
-    const notReachedMs=milestones.filter(m=>curWaist>m.waist);
-    const nextMs=notReachedMs.length>0?notReachedMs[0]:null;
-    const cls=reached?'reached':(ms===nextMs?'next':'future');
-    const valText=reached?'✓ Achieved':`~${wks} wks · ${dateIn(wks)}`;
-    const waistText=reached?`${ms.waist}in reached`:`${ms.emoji} Target: ${ms.waist}in`;
-    return `<div class="est-ms ${cls}">
-      <div class="est-ms-dot"></div>
-      <div class="est-ms-label">${ms.label}</div>
-      <div class="est-ms-val">${valText}<br><span style="font-size:8px;color:var(--m1)">${waistText}</span></div>
-    </div>`;
-  }).join('');
-
-  // ── Progress bar ──────────────────────────────────────
-  const startWaist=waistPts[0].v;
-  const targetWaist=31.5; // lower abs visible
-  const totalGap=startWaist-targetWaist;
-  const doneGap=startWaist-curWaist;
-  const pct=Math.min(100,Math.max(0,totalGap>0?Math.round(doneGap/totalGap*100):100));
-
-  // ── Trend pills ───────────────────────────────────────
-  const wtTrendCls=recentWtRate>=0.3?'good':recentWtRate>=0.1?'warn':'stall';
-  const waistTrendCls=recentWaistRate>=0.15?'good':recentWaistRate>=0.05?'warn':'stall';
-
-  // ── Stall warning ─────────────────────────────────────
-  const stallHTML=waistStalled
-    ?`<div class="est-stall">⚠️ Waist stalled for 3+ weeks — common causes: untracked calories, water retention, or deficit too small. Consider auditing portion sizes for one week.</div>`
-    :'';
-
-  // ── KPI cards ─────────────────────────────────────────
-  const nextTarget=milestones.find(m=>curWaist>m.waist);
-  const wksToNext=nextTarget?weeksTo(nextTarget.waist):0;
-  const wtToNext=nextTarget?(wksToNext*activeWtRate).toFixed(1):0;
-
-  el.innerHTML=`
-    <div class="est-kpi-row">
-      <div class="est-kpi ac3">
-        <div class="est-kpi-lbl">Current Waist</div>
-        <div class="est-kpi-val">${curWaist}"</div>
-        <div class="est-kpi-sub">${curWt}kg bodyweight</div>
-      </div>
-      <div class="est-kpi ac">
-        <div class="est-kpi-lbl">Next Milestone</div>
-        <div class="est-kpi-val">${nextTarget?nextTarget.waist+'"':'Done!'}</div>
-        <div class="est-kpi-sub">${nextTarget?nextTarget.label:'All milestones hit'}</div>
-      </div>
-      <div class="est-kpi ${wtTrendCls==='good'?'ac':'ac2'}">
-        <div class="est-kpi-lbl">Est. to Next</div>
-        <div class="est-kpi-val">${nextTarget?wksToNext+'wk':'—'}</div>
-        <div class="est-kpi-sub">${nextTarget?'−'+wtToNext+'kg needed':''}</div>
-      </div>
-    </div>
-
-    <div class="est-bar-section">
-      <div class="est-bar-labels">
-        <span>${startWaist}" start</span>
-        <span style="color:var(--ac)">${pct}% to lower abs</span>
-        <span>${targetWaist}" target</span>
-      </div>
-      <div class="est-bar-track">
-        <div class="est-bar-fill" style="width:${pct}%">
-          <div class="est-bar-now"></div>
-        </div>
-      </div>
-    </div>
-
-    ${stallHTML}
-
-    <div class="est-trend-row">
-      <div class="est-trend-pill ${wtTrendCls}">
-        <span style="color:var(--m1)">4wk weight loss</span>
-        <b>${recentWtRate>0?'-'+recentWtRate.toFixed(2):'0.00'} kg/wk</b>
-      </div>
-      <div class="est-trend-pill ${waistTrendCls}">
-        <span style="color:var(--m1)">4wk waist loss</span>
-        <b>${recentWaistRate>0?'-'+recentWaistRate.toFixed(2):'0.00'} in/wk</b>
-      </div>
-      <div class="est-trend-pill">
-        <span style="color:var(--m1)">your kg per inch</span>
-        <b>${kgPerInch} kg/in</b>
-      </div>
-    </div>
-
-    ${msHTML}
-
-    <div class="est-footer" style="margin-top:10px">
-      Projection based on your personal 4-week rate. Updates every time you log a new week.
-      Milestones calibrated for ~5'10" male — adjust targets if needed.
-    </div>
-  `;
-}
-
 // ═══════════════════════════════════════════════
 // WEIGHT TRACKER
 // ═══════════════════════════════════════════════
@@ -2330,7 +2112,6 @@ function renderWeight(){
   }
   drawChart();
   drawWaistChart();
-  renderEstimator();
 }
 
 // swLive: save value immediately without re-rendering the grid (preserves focus)
@@ -2358,7 +2139,7 @@ function swLive(input, k){
 }
 
 // sw: called on blur/change — redraws charts only, no grid rebuild
-function sw(k,v){ST.weights[k]=v;save();drawChart();drawWaistChart();renderEstimator();}
+function sw(k,v){ST.weights[k]=v;save();drawChart();drawWaistChart();}
 
 function drawChart(){
   const cv=document.getElementById('wch');if(!cv)return;
@@ -2372,13 +2153,21 @@ function drawChart(){
   if(pts.length<2){ctx.fillStyle='#333';ctx.font='11px DM Sans,sans-serif';ctx.textAlign='center';ctx.fillText('Enter at least 2 weeks of weight data to see your trend',W/2,H/2);return;}
   const vs=pts.map(p=>p.v);
   const mn=Math.min(...vs)-.5,mx=Math.max(...vs)+.5;
-  const pd={t:12,b:20,l:38,r:8},cW=W-pd.l-pd.r,cH=H-pd.t-pd.b;
+  const pd={t:12,b:28,l:38,r:8},cW=W-pd.l-pd.r,cH=H-pd.t-pd.b;
   const tx=w=>pd.l+(w-1)/53*cW,ty=v=>pd.t+(1-(v-mn)/(mx-mn))*cH;
   ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
   [0,.25,.5,.75,1].forEach(f=>{
     const y=pd.t+f*cH;ctx.beginPath();ctx.moveTo(pd.l,y);ctx.lineTo(W-pd.r,y);ctx.stroke();
     ctx.fillStyle='#444';ctx.font='9px DM Mono,monospace';ctx.textAlign='right';
     ctx.fillText((mx-f*(mx-mn)).toFixed(1),pd.l-3,y+3);
+  });
+  // x-axis week labels
+  ctx.fillStyle='#555';ctx.font='8px DM Mono,monospace';ctx.textAlign='center';
+  const step=Math.max(1,Math.floor(pts.length/6));
+  pts.forEach((p,i)=>{
+    if(i===0||i===pts.length-1||i%step===0){
+      ctx.fillText('W'+p.w,tx(p.w),H-6);
+    }
   });
   ctx.globalAlpha=.08;ctx.fillStyle='#C8FF00';
   ctx.beginPath();pts.forEach((p,i)=>i===0?ctx.moveTo(tx(p.w),ty(p.v)):ctx.lineTo(tx(p.w),ty(p.v)));
@@ -2400,13 +2189,21 @@ function drawWaistChart(){
   if(pts.length<2){ctx.fillStyle='#333';ctx.font='11px DM Sans,sans-serif';ctx.textAlign='center';ctx.fillText('Enter at least 2 weeks of waist data to see your trend',W/2,H/2);return;}
   const vs=pts.map(p=>p.v);
   const mn=Math.min(...vs)-1,mx=Math.max(...vs)+1;
-  const pd={t:12,b:20,l:42,r:8},cW=W-pd.l-pd.r,cH=H-pd.t-pd.b;
+  const pd={t:12,b:28,l:42,r:8},cW=W-pd.l-pd.r,cH=H-pd.t-pd.b;
   const tx=w=>pd.l+(w-1)/53*cW,ty=v=>pd.t+(1-(v-mn)/(mx-mn))*cH;
   ctx.strokeStyle='rgba(255,255,255,0.05)';ctx.lineWidth=1;
   [0,.25,.5,.75,1].forEach(f=>{
     const y=pd.t+f*cH;ctx.beginPath();ctx.moveTo(pd.l,y);ctx.lineTo(W-pd.r,y);ctx.stroke();
     ctx.fillStyle='#444';ctx.font='9px DM Mono,monospace';ctx.textAlign='right';
     ctx.fillText((mx-f*(mx-mn)).toFixed(1)+'in',pd.l-3,y+3);
+  });
+  // x-axis week labels
+  ctx.fillStyle='#555';ctx.font='8px DM Mono,monospace';ctx.textAlign='center';
+  const step=Math.max(1,Math.floor(pts.length/6));
+  pts.forEach((p,i)=>{
+    if(i===0||i===pts.length-1||i%step===0){
+      ctx.fillText('W'+p.w,tx(p.w),H-6);
+    }
   });
   ctx.globalAlpha=.08;ctx.fillStyle='#29B6F6';
   ctx.beginPath();pts.forEach((p,i)=>i===0?ctx.moveTo(tx(p.w),ty(p.v)):ctx.lineTo(tx(p.w),ty(p.v)));

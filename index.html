@@ -919,7 +919,10 @@ function exSetsAdj(ph,day,ei,delta,baseSets){
   else setExOv(ph,day,ei,{sets:next});
   renderWorkout();
 }
+const _openSwapPanels=new Set();
 function toggleSwapPanel(ekid){
+  if(_openSwapPanels.has(ekid))_openSwapPanels.delete(ekid);
+  else _openSwapPanels.add(ekid);
   document.getElementById('swpanel_'+ekid)?.classList.toggle('open');
 }
 
@@ -1853,7 +1856,7 @@ function renderEx(ex,ei,KEY){
   // Swap panel content
   const subs=SUBSTITUTES[ex.n]||[];
   const curSetsVal=(ov&&ov.sets)||ex.sets;
-  const swapPanel=`<div class="exsw-panel" id="swpanel_${EK}">
+  const swapPanel=`<div class="exsw-panel${_openSwapPanels.has(EK)?' open':''}" id="swpanel_${EK}">
     <div class="exsw-row">
       <span class="exsw-lbl">SWAP TO</span>
       <select class="exsw-sel" onchange="exSwapPick(${ph},${day},${ei},this.value);if(this.value==='__custom__')document.getElementById('exswtxt_${EK}').focus();">

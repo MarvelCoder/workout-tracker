@@ -139,6 +139,35 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-
 .t.opt{background:rgba(171,71,188,.12);color:var(--pur)}
 .t.wu{background:rgba(41,182,246,.12);color:var(--ac3)}
 .t.ok{background:rgba(76,175,80,.12);color:var(--grn)}
+.t.swap{background:rgba(171,71,188,.14);color:var(--pur)}
+
+/* ── EXERCISE SWAP ── */
+.exsw-toggle{font-size:9px;color:var(--pur);cursor:pointer;margin-top:4px;display:inline-flex;
+  align-items:center;gap:3px;font-weight:700;letter-spacing:.03em;user-select:none}
+.exsw-toggle:hover{color:#c568da}
+.exsw-panel{display:none;background:var(--s2);border:1px solid rgba(171,71,188,.25);
+  border-radius:8px;padding:10px 11px;margin:2px 12px 10px}
+.exsw-panel.open{display:block}
+.exsw-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.exsw-lbl{font-size:8px;font-weight:900;letter-spacing:.1em;color:var(--m1);flex-shrink:0;width:38px}
+.exsw-sel{background:var(--s1);border:1px solid var(--bdr2);color:var(--txt);padding:5px 6px;
+  border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;flex:1;cursor:pointer}
+.exsw-sel:focus{outline:none;border-color:var(--pur)}
+.exsw-custom{background:var(--s1);border:1px solid var(--bdr);color:var(--txt);padding:5px 7px;
+  border-radius:5px;font-size:11px;font-family:'DM Sans',sans-serif;width:100%;margin-bottom:6px}
+.exsw-custom:focus{outline:none;border-color:var(--pur)}
+.exsw-custom::placeholder{color:#3a3a3a}
+.exsw-stepper{display:flex;align-items:center;gap:8px}
+.exsw-stepper button{background:var(--s1);border:1px solid var(--bdr2);color:var(--txt);
+  width:24px;height:24px;border-radius:5px;font-size:14px;cursor:pointer;display:flex;
+  align-items:center;justify-content:center;line-height:1;font-family:'DM Sans',sans-serif}
+.exsw-stepper button:hover{border-color:var(--pur);color:var(--pur)}
+.exsw-setnum{font-family:'Bebas Neue',sans-serif;font-size:16px;min-width:16px;text-align:center}
+.exsw-default-hint{font-size:9px;color:var(--m1);font-style:italic}
+.exsw-reset{background:none;border:1px solid rgba(255,255,255,.1);color:var(--m2);padding:4px 10px;
+  border-radius:5px;font-size:9px;font-weight:700;cursor:pointer;margin-top:2px;
+  font-family:'DM Sans',sans-serif}
+.exsw-reset:hover{border-color:var(--red);color:var(--red)}
 
 /* ── SET ROWS ── */
 .sb{padding:0 12px 10px}
@@ -812,6 +841,88 @@ const ABCIRCUIT=[
 // Exercise constructor: name, tag (main/acc/opt), sets, reps, hasWarmup, rest, note
 const E=(n,tag,sets,reps,wu,rest,note='')=>({n,tag,sets,reps,wu:!!wu,rest,note});
 
+// ═══════════════════════════════════════════════
+// EXERCISE SUBSTITUTES — quick-pick alternatives per default exercise
+// ═══════════════════════════════════════════════
+const SUBSTITUTES={
+  'Barbell Deadlift':['Trap Bar Deadlift','Rack Pull','Sumo Deadlift'],
+  'Barbell Row':['Pendlay Row','T-Bar Row','Chest-Supported Row','Seal Row'],
+  'Wide-Grip Pull-Up':['Neutral-Grip Pull-Up','Chin-Up','Lat Pulldown (Wide)'],
+  'Close-Grip Lat Pulldown':['V-Bar Pulldown','Single-Arm Lat Pulldown','Straight-Arm Pulldown'],
+  'Incline Barbell Bench Press':['Incline Smith Machine Press','Incline Hammer Strength Press'],
+  'Incline Dumbbell Bench Press':['Low-Incline DB Press','DB Floor Press'],
+  'Flat Barbell Bench Press':['Flat Dumbbell Bench Press','Smith Machine Flat Press','Machine Chest Press'],
+  'Weighted Dip (Chest)':['Cable Chest Fly','Pec Deck Fly','Decline Bench Press'],
+  'Lying Hamstring Curl':['Seated Hamstring Curl'],
+  'Leg Extension':['Sissy Squat'],
+  'Hack Squat':['Leg Press','Front Squat','Smith Machine Squat'],
+  'Romanian Deadlift':['Stiff-Leg Deadlift','Good Morning','Single-Leg RDL'],
+  'Bulgarian Split Squat':['Walking Lunge','Reverse Lunge','Single-Leg Leg Press'],
+  'Seated or Standing Barbell Military Press':['Seated DB Shoulder Press','Arnold Press','Machine Shoulder Press'],
+  'Side Lateral Raise':['Cable Lateral Raise','Machine Lateral Raise','Lean-Away Lateral Raise'],
+  'Rear Delt Dumbbell Fly':['Cable Rear Delt Fly','Reverse Pec Deck'],
+  'Face Pull':['Band Pull-Apart','Cable Rear Delt Row'],
+  'Barbell Curl':['EZ-Bar Curl','Cable Curl','Dumbbell Curl'],
+  'Close-Grip Bench Press':['Skull Crusher','Cable Tricep Pushdown','Weighted Dip (Triceps)'],
+  'Seated Incline DB Curl':['Concentration Curl','Preacher Curl','Cable Incline Curl'],
+  'Seated Triceps Press':['Overhead Cable Extension','Tricep Rope Pushdown','Single-Arm DB Overhead Extension'],
+};
+
+// Override key is independent of week — applies to every week within a given phase,
+// so swaps persist across the whole phase without touching other phases or logged data.
+const ovKey=(ph,day,ei)=>`p${ph}d${day}e${ei}`;
+function getExOv(ph,day,ei){return (ST.exOv&&ST.exOv[ovKey(ph,day,ei)])||null;}
+function setExOv(ph,day,ei,patch){
+  if(!ST.exOv)ST.exOv={};
+  const k=ovKey(ph,day,ei);
+  ST.exOv[k]={...(ST.exOv[k]||{}),...patch};
+  save();
+}
+function clearExOvField(ph,day,ei,field){
+  if(!ST.exOv)return;
+  const k=ovKey(ph,day,ei);
+  if(ST.exOv[k]){
+    delete ST.exOv[k][field];
+    if(Object.keys(ST.exOv[k]).length===0)delete ST.exOv[k];
+    save();
+  }
+}
+function exResetOv(ph,day,ei){
+  if(!ST.exOv)return;
+  delete ST.exOv[ovKey(ph,day,ei)];
+  save();renderWorkout();
+}
+function getEffectiveEx(baseEx,ph,day,ei){
+  const ov=getExOv(ph,day,ei);
+  if(!ov)return baseEx;
+  return {...baseEx, n:ov.name||baseEx.n, sets:ov.sets||baseEx.sets};
+}
+function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function exSwapPick(ph,day,ei,val){
+  if(val==='__custom__')return;
+  if(val==='__default__'){clearExOvField(ph,day,ei,'name');}
+  else{setExOv(ph,day,ei,{name:val});}
+  renderWorkout();
+}
+function exSwapCustom(ph,day,ei,val){
+  const n=(val||'').trim();
+  if(!n)clearExOvField(ph,day,ei,'name');
+  else setExOv(ph,day,ei,{name:n});
+  renderWorkout();
+}
+function exSetsAdj(ph,day,ei,delta,baseSets){
+  const ov=getExOv(ph,day,ei);
+  const cur=(ov&&ov.sets)||baseSets;
+  const next=Math.max(1,Math.min(8,cur+delta));
+  if(next===baseSets)clearExOvField(ph,day,ei,'sets');
+  else setExOv(ph,day,ei,{sets:next});
+  renderWorkout();
+}
+function toggleSwapPanel(ekid){
+  document.getElementById('swpanel_'+ekid)?.classList.toggle('open');
+}
+
 // THE BOOK'S ACTUAL PROGRAM — same 5 days repeated each week within a phase
 // Exercises change between phases (as per the BLS PDF phases 1–6)
 // The day STRUCTURE is always the same (from the book):
@@ -1302,7 +1413,7 @@ const db = firebase.database();
 // ═══════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════
-let ST={ph:0,wk:0,day:0,logs:{},done:{},rest:{},circuits:{},notes:{},weights:{}};
+let ST={ph:0,wk:0,day:0,logs:{},done:{},rest:{},circuits:{},notes:{},weights:{},exOv:{}};
 let currentUID = null;
 let dbRef = null;
 let saveTimer = null;
@@ -1361,7 +1472,8 @@ function loadFromFirebase(){
         rest: data.rest||{},
         circuits: data.circuits||{},
         notes: data.notes||{},
-        weights: data.weights||{}
+        weights: data.weights||{},
+        exOv: data.exOv||{}
       };
     }
     setSyncDot('saved');
@@ -1379,7 +1491,8 @@ function loadFromFirebase(){
           rest: data.rest||ST.rest,
           circuits: data.circuits||ST.circuits,
           notes: data.notes||ST.notes,
-          weights: data.weights||ST.weights
+          weights: data.weights||ST.weights,
+          exOv: data.exOv||ST.exOv
         };
       }
     });
@@ -1402,6 +1515,7 @@ function save(){
       rest:ST.rest||{},
       circuits:ST.circuits, notes:ST.notes,
       weights:ST.weights,
+      exOv:ST.exOv||{},
       updatedAt: Date.now()
     }).then(()=>{
       setSyncDot('saved');
@@ -1434,7 +1548,11 @@ function dayProg(ph,wk,day){
   if(isRest(ph,wk,day))return 100;
   const d=dk(ph,wk,day),p=PHASES[ph].days[day];
   let tot=0,dn=0;
-  p.exs.forEach((x,ei)=>{for(let s=0;s<x.sets;s++){tot++;if(ST.logs[sk(ek(d,ei),s)]?.done)dn++;}});
+  p.exs.forEach((x,ei)=>{
+    const ov=getExOv(ph,day,ei);
+    const sets=(ov&&ov.sets)||x.sets;
+    for(let s=0;s<sets;s++){tot++;if(ST.logs[sk(ek(d,ei),s)]?.done)dn++;}
+  });
   return tot?Math.round(dn/tot*100):0;
 }
 
@@ -1721,30 +1839,63 @@ function renderWorkout(){
 }
 
 function renderEx(ex,ei,KEY){
+  const ph=ST.ph, day=ST.day;
+  const ov=getExOv(ph,day,ei);
+  const eff=getEffectiveEx(ex,ph,day,ei);
+  const isSwapped=!!(ov&&ov.name);
   const EK=ek(KEY,ei);
-  const allDone=Array.from({length:ex.sets},(_,s)=>ST.logs[sk(EK,s)]?.done).every(Boolean);
+  const allDone=Array.from({length:eff.sets},(_,s)=>ST.logs[sk(EK,s)]?.done).every(Boolean);
   const isOpt=ex.tag==='opt';
 
-  // Fetch previous-week data for this exercise
-  const prevWkData=getPrevWeekExData(ST.ph,ST.wk,ST.day,ei,ex.sets);
+  // Fetch previous-week data for this exercise (uses current effective set count)
+  const prevWkData=getPrevWeekExData(ST.ph,ST.wk,ST.day,ei,eff.sets);
+
+  // Swap panel content
+  const subs=SUBSTITUTES[ex.n]||[];
+  const curSetsVal=(ov&&ov.sets)||ex.sets;
+  const swapPanel=`<div class="exsw-panel" id="swpanel_${EK}">
+    <div class="exsw-row">
+      <span class="exsw-lbl">SWAP TO</span>
+      <select class="exsw-sel" onchange="exSwapPick(${ph},${day},${ei},this.value);if(this.value==='__custom__')document.getElementById('exswtxt_${EK}').focus();">
+        <option value="__default__">Default: ${ex.n}</option>
+        ${subs.map(s=>`<option value="${escAttr(s)}">${s}</option>`).join('')}
+        <option value="__custom__">Custom…</option>
+      </select>
+    </div>
+    <input id="exswtxt_${EK}" class="exsw-custom" type="text" placeholder="Or type any custom exercise name"
+      value="${isSwapped?escAttr(ov.name):''}" onchange="exSwapCustom(${ph},${day},${ei},this.value)">
+    <div class="exsw-row">
+      <span class="exsw-lbl">SETS</span>
+      <div class="exsw-stepper">
+        <button onclick="exSetsAdj(${ph},${day},${ei},-1,${ex.sets})">−</button>
+        <span class="exsw-setnum">${curSetsVal}</span>
+        <button onclick="exSetsAdj(${ph},${day},${ei},1,${ex.sets})">+</button>
+      </div>
+      ${curSetsVal!==ex.sets?`<span class="exsw-default-hint">default ${ex.sets}</span>`:''}
+    </div>
+    ${(isSwapped||curSetsVal!==ex.sets)?`<button class="exsw-reset" onclick="exResetOv(${ph},${day},${ei})">↺ Reset to default</button>`:''}
+  </div>`;
 
   let H=`<div class="ec${allDone?' ok':''}${isOpt?' opt-box':''}" id="card_${EK}">`;
   if(isOpt)H+=`<div class="opt-lbl">OPTIONAL EXERCISE</div>`;
   H+=`<div class="ech">
     <div>
-      <div class="ecn">${ex.n}</div>
-      <div class="ecd">${ex.sets} sets × ${ex.reps} reps · ${ex.rest}${ex.note?(' · <span style="color:var(--ac3)">'+ex.note+'</span>'):''}</div>
+      <div class="ecn">${eff.n}</div>
+      <div class="ecd">${eff.sets} sets × ${ex.reps} reps · ${ex.rest}${ex.note?(' · <span style="color:var(--ac3)">'+ex.note+'</span>'):''}</div>
+      <div class="exsw-toggle" onclick="toggleSwapPanel('${EK}')">⇄ ${isSwapped?'Swapped — edit':'Swap exercise / sets'}</div>
     </div>
     <div class="ectags">
       ${ex.wu?'<span class="t wu">W/UP</span>':''}
       <span class="t ${ex.tag}">${ex.tag==='main'?'MAIN':ex.tag==='acc'?'ACCESS.':'OPTIONAL'}</span>
+      ${isSwapped?'<span class="t swap">SWAPPED</span>':''}
       ${allDone?`<span class="t ok" id="dt_${EK}">✓</span>`:''}
     </div>
   </div>
+  ${swapPanel}
   <div class="sb">
     <div class="sh2"><div>SET</div><div>WEIGHT (kg)</div><div>TARGET</div><div>REPS DONE</div><div>✓</div></div>`;
 
-  for(let s=0;s<ex.sets;s++){
+  for(let s=0;s<eff.sets;s++){
     const LK=sk(EK,s);const lg=ST.logs[LK]||{};
     const pw=prevWkData[s];
     const hasPrev=pw&&(pw.weight||pw.reps);
@@ -2449,12 +2600,13 @@ function generateExportText(){
     for(let wk=0;wk<phase.weeks;wk++){
       phase.days.forEach((day,d)=>{
         day.exs.forEach((ex,ei)=>{
+          const eff=getEffectiveEx(ex,pIdx,d,ei);
           const KEY=dk(pIdx,wk,d),EK=ek(KEY,ei);
-          for(let s=0;s<ex.sets;s++){
+          for(let s=0;s<eff.sets;s++){
             const lg=ST.logs[sk(EK,s)];
             if(lg&&lg.weight&&parseFloat(lg.weight)>0){
               const w=parseFloat(lg.weight),r=parseInt(lg.reps)||0;
-              if(!prMap[ex.n]||w>prMap[ex.n].w||(w===prMap[ex.n].w&&r>prMap[ex.n].r))prMap[ex.n]={w,r};
+              if(!prMap[eff.n]||w>prMap[eff.n].w||(w===prMap[eff.n].w&&r>prMap[eff.n].r))prMap[eff.n]={w,r};
             }
           }
         });
@@ -2494,12 +2646,13 @@ function generateExportText(){
     const dayLog=[];
     day.exs.forEach((ex,ei)=>{
       const EK=ek(KEY,ei);
+      const eff=getEffectiveEx(ex,ST.ph,d,ei);
       const sets=[];
-      for(let s=0;s<ex.sets;s++){
+      for(let s=0;s<eff.sets;s++){
         const lg=ST.logs[sk(EK,s)];
         if(lg&&lg.weight)sets.push(`${lg.weight}×${lg.reps||'?'}`);
       }
-      if(sets.length)dayLog.push(`${ex.n.replace(/Barbell |Dumbbell |Seated |Standing |Single-Arm /g,'')}:${sets.join('/')}`);
+      if(sets.length)dayLog.push(`${eff.n.replace(/Barbell |Dumbbell |Seated |Standing |Single-Arm /g,'')}:${sets.join('/')}`);
     });
     // Calf
     if(day.calf)CALF[day.calf].ex.forEach((c,ci)=>{
@@ -2863,6 +3016,15 @@ const GP_EXERCISES=[
 let gpSelectedEx=GP_EXERCISES[0];
 let gpTooltipDiv=null;
 
+// Default list + any custom/substitute names currently active in ST.exOv,
+// so a swapped-in exercise gets its own entry (and its own history) here.
+function gpAllExerciseNames(){
+  const names=[...GP_EXERCISES];
+  const extra=new Set();
+  if(ST.exOv)Object.values(ST.exOv).forEach(ov=>{if(ov&&ov.name&&!names.includes(ov.name))extra.add(ov.name);});
+  return names.concat([...extra].sort());
+}
+
 // Returns [{globalWeek, ph, wk, weight, reps}] for an exercise across all ST.logs
 function gpGetHistory(exName){
   const rows=[];let gw=0;
@@ -2872,9 +3034,10 @@ function gpGetHistory(exName){
       let best=null;
       phase.days.forEach((day,d)=>{
         day.exs.forEach((ex,ei)=>{
-          if(ex.n!==exName)return;
+          const eff=getEffectiveEx(ex,ph,d,ei);
+          if(eff.n!==exName)return;
           const KEY=dk(ph,wk,d),EK=ek(KEY,ei);
-          for(let s=0;s<ex.sets;s++){
+          for(let s=0;s<eff.sets;s++){
             const lg=ST.logs[sk(EK,s)];
             if(lg&&lg.weight&&parseFloat(lg.weight)>0){
               const w=parseFloat(lg.weight),r=parseInt(lg.reps)||0;
@@ -2911,13 +3074,14 @@ function renderGymProgress(){
 
 function renderGpExList(){
   const el=document.getElementById('gpExList');if(!el)return;
-  el.innerHTML=GP_EXERCISES.map((ex,i)=>
-    `<button class="gp-exbtn${ex===gpSelectedEx?' on':''}" data-i="${i}" onclick="gpSelectEx(this.dataset.i)">${ex}</button>`
+  const names=gpAllExerciseNames();
+  el.innerHTML=names.map(n=>
+    `<button class="gp-exbtn${n===gpSelectedEx?' on':''}" data-name="${escAttr(n)}" onclick="gpSelectExByName(this.dataset.name)">${n}</button>`
   ).join('');
 }
 
-function gpSelectEx(idx){
-  gpSelectedEx=GP_EXERCISES[parseInt(idx)];
+function gpSelectExByName(name){
+  gpSelectedEx=name;
   renderGpExList();
   drawGpChart();
   renderGpTable();
@@ -3032,12 +3196,13 @@ function gpWeekBests(targetGw){
       gw++;if(gw!==targetGw)continue;
       phase.days.forEach((day,d)=>{
         day.exs.forEach((ex,ei)=>{
+          const eff=getEffectiveEx(ex,ph,d,ei);
           const KEY=dk(ph,wk,d),EK=ek(KEY,ei);
-          for(let s=0;s<ex.sets;s++){
+          for(let s=0;s<eff.sets;s++){
             const lg=ST.logs[sk(EK,s)];
             if(lg&&lg.weight&&parseFloat(lg.weight)>0){
               const w=parseFloat(lg.weight),r=parseInt(lg.reps)||0;
-              if(!bests[ex.n]||w>bests[ex.n].weight)bests[ex.n]={weight:w,reps:r};
+              if(!bests[eff.n]||w>bests[eff.n].weight)bests[eff.n]={weight:w,reps:r};
             }
           }
         });

@@ -926,6 +926,113 @@ function toggleSwapPanel(ekid){
   document.getElementById('swpanel_'+ekid)?.classList.toggle('open');
 }
 
+// ── Remove / restore a built-in exercise (soft — never wipes logs) ──
+function exRemove(ph,day,ei){
+  setExOv(ph,day,ei,{removed:true});
+  renderWorkout();
+}
+function exUnremove(ph,day,ei){
+  clearExOvField(ph,day,ei,'removed');
+  renderWorkout();
+}
+
+// ── User-added custom exercises — scoped per phase+day, all weeks in that phase ──
+const customExKey=(ph,day)=>`p${ph}d${day}`;
+function getCustomExs(ph,day){
+  return (ST.customExs && ST.customExs[customExKey(ph,day)]) || [];
+}
+function addCustomEx(ph,day){
+  if(!ST.customExs)ST.customExs={};
+  const k=customExKey(ph,day);
+  if(!ST.customExs[k])ST.customExs[k]=[];
+  const id='c'+Date.now().toString(36)+Math.floor(Math.random()*1000);
+  ST.customExs[k].push({id,n:'',tag:'acc',sets:3,reps:'8-12',rest:'Rest 90s'});
+  save();
+  renderWorkout();
+  setTimeout(()=>{document.getElementById('customname_'+id)?.focus();},50);
+}
+function updateCustomEx(ph,day,id,field,val){
+  const arr=ST.customExs?.[customExKey(ph,day)];
+  const item=arr?.find(x=>x.id===id);
+  if(!item)return;
+  item[field]=val;save();
+}
+function customExSetsAdj(ph,day,id,delta){
+  const arr=ST.customExs?.[customExKey(ph,day)];
+  const item=arr?.find(x=>x.id===id);
+  if(!item)return;
+  item.sets=Math.max(1,Math.min(8,(item.sets||3)+delta));
+  save();renderWorkout();
+}
+function removeCustomEx(ph,day,id){
+  const arr=ST.customExs?.[customExKey(ph,day)];
+  if(!arr)return;
+  const idx=arr.findIndex(x=>x.id===id);
+  if(idx>=0)arr.splice(idx,1);
+  save();renderWorkout();
+}
+
+function renderCustomEx(item,ph,day,KEY){
+  const EK=ek(KEY,item.id);
+  const sets=item.sets||3;
+  const allDone=sets>0&&Array.from({length:sets},(_,s)=>ST.logs[sk(EK,s)]?.done).every(Boolean);
+  const prevWkData=getPrevWeekExData(ph,ST.wk,day,item.id,sets);
+
+  let H=`<div class="ec${allDone?' ok':''}" id="card_${EK}">
+  <div class="ech">
+    <div style="flex:1">
+      <input class="exsw-custom" type="text" placeholder="Exercise name…" id="customname_${item.id}"
+        value="${escAttr(item.n)}" style="font-size:13px;font-weight:700;margin-bottom:7px"
+        onchange="updateCustomEx(${ph},${day},'${item.id}','n',this.value)">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:5px">
+          <span class="exsw-lbl" style="width:auto">REPS</span>
+          <input class="abs-ex-inp" style="width:56px" type="text" value="${escAttr(item.reps||'')}"
+            onchange="updateCustomEx(${ph},${day},'${item.id}','reps',this.value)">
+        </div>
+        <div style="display:flex;align-items:center;gap:5px">
+          <span class="exsw-lbl" style="width:auto">SETS</span>
+          <div class="exsw-stepper">
+            <button onclick="customExSetsAdj(${ph},${day},'${item.id}',-1)">−</button>
+            <span class="exsw-setnum">${sets}</span>
+            <button onclick="customExSetsAdj(${ph},${day},'${item.id}',1)">+</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="ectags">
+      <span class="t opt">CUSTOM</span>
+      ${allDone?`<span class="t ok">✓</span>`:''}
+    </div>
+  </div>
+  <div class="sb">
+    <div class="sh2"><div>SET</div><div>WEIGHT (kg)</div><div>TARGET</div><div>REPS DONE</div><div>✓</div></div>`;
+
+  for(let s=0;s<sets;s++){
+    const LK=sk(EK,s);const lg=ST.logs[LK]||{};
+    const pw=prevWkData[s];
+    const hasPrev=pw&&(pw.weight||pw.reps);
+    H+=`<div class="sr${lg.done?' sl':''}" id="r_${LK}">
+      <div class="sn">${s+1}</div>
+      <input class="si${lg.weight?' hv':''}" type="number" inputmode="decimal" placeholder="kg" value="${lg.weight||''}" oninput="lf('${LK}','weight',this.value)">
+      <div class="stgt">${item.reps||'—'}</div>
+      <input class="si${lg.reps?' hv':''}" type="number" inputmode="numeric" placeholder="reps" value="${lg.reps||''}" oninput="lf('${LK}','reps',this.value)">
+      <button class="ck${lg.done?' on':''}" id="c_${LK}" onclick="ts('${LK}','${EK}',this)">✓</button>
+    </div>
+    ${hasPrev
+      ?`<div class="lwref">
+          <div class="lwpill"><span class="lwlbl">Last wk</span>${pw.weight?pw.weight+'kg':'—'} × ${pw.reps?pw.reps+' reps':'—'}</div>
+          <button class="lwcopy" onclick="copyPrevSet('${LK}',${pw.weight||'null'},${pw.reps||'null'},this)">↑ Use</button>
+        </div>`
+      :`<div class="lwref"><span class="lwnone">No data last week</span></div>`
+    }`;
+  }
+  H+=`<div class="rn">⏱ ${item.rest||'Rest as needed'} between sets</div></div>
+  <button class="exsw-reset" style="margin:0 12px 10px" onclick="if(confirm('Remove this custom exercise? This cannot be undone.'))removeCustomEx(${ph},${day},'${item.id}')">🗑 Remove Exercise</button>
+  </div>`;
+  return H;
+}
+
 // THE BOOK'S ACTUAL PROGRAM — same 5 days repeated each week within a phase
 // Exercises change between phases (as per the BLS PDF phases 1–6)
 // The day STRUCTURE is always the same (from the book):
@@ -1416,7 +1523,7 @@ const db = firebase.database();
 // ═══════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════
-let ST={ph:0,wk:0,day:0,logs:{},done:{},rest:{},circuits:{},notes:{},weights:{},exOv:{}};
+let ST={ph:0,wk:0,day:0,logs:{},done:{},rest:{},circuits:{},notes:{},weights:{},exOv:{},customExs:{}};
 let currentUID = null;
 let dbRef = null;
 let saveTimer = null;
@@ -1476,7 +1583,8 @@ function loadFromFirebase(){
         circuits: data.circuits||{},
         notes: data.notes||{},
         weights: data.weights||{},
-        exOv: data.exOv||{}
+        exOv: data.exOv||{},
+        customExs: data.customExs||{}
       };
     }
     setSyncDot('saved');
@@ -1495,7 +1603,8 @@ function loadFromFirebase(){
           circuits: data.circuits||ST.circuits,
           notes: data.notes||ST.notes,
           weights: data.weights||ST.weights,
-          exOv: data.exOv||ST.exOv
+          exOv: data.exOv||ST.exOv,
+          customExs: data.customExs||ST.customExs
         };
       }
     });
@@ -1519,6 +1628,7 @@ function save(){
       circuits:ST.circuits, notes:ST.notes,
       weights:ST.weights,
       exOv:ST.exOv||{},
+      customExs:ST.customExs||{},
       updatedAt: Date.now()
     }).then(()=>{
       setSyncDot('saved');
@@ -1553,8 +1663,13 @@ function dayProg(ph,wk,day){
   let tot=0,dn=0;
   p.exs.forEach((x,ei)=>{
     const ov=getExOv(ph,day,ei);
+    if(ov&&ov.removed)return;
     const sets=(ov&&ov.sets)||x.sets;
     for(let s=0;s<sets;s++){tot++;if(ST.logs[sk(ek(d,ei),s)]?.done)dn++;}
+  });
+  getCustomExs(ph,day).forEach(item=>{
+    const sets=item.sets||3;
+    for(let s=0;s<sets;s++){tot++;if(ST.logs[sk(ek(d,item.id),s)]?.done)dn++;}
   });
   return tot?Math.round(dn/tot*100):0;
 }
@@ -1695,7 +1810,19 @@ function renderWorkout(){
 
   // Exercises
   H+=`<div class="sdiv"><span class="sdivl">Working Sets</span></div>`;
-  day.exs.forEach((ex,ei)=>{H+=renderEx(ex,ei,KEY);});
+  const removedList=[];
+  day.exs.forEach((ex,ei)=>{
+    const ovc=getExOv(ST.ph,ST.day,ei);
+    if(ovc&&ovc.removed){removedList.push({ex,ei});return;}
+    H+=renderEx(ex,ei,KEY);
+  });
+  getCustomExs(ST.ph,ST.day).forEach(item=>{H+=renderCustomEx(item,ST.ph,ST.day,KEY);});
+  H+=`<button class="abs-add-btn" style="margin-bottom:10px" onclick="addCustomEx(${ST.ph},${ST.day})">＋ Add Custom Exercise</button>`;
+  if(removedList.length){
+    H+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px">
+      ${removedList.map(({ex,ei})=>`<button class="lwcopy" style="opacity:.7" onclick="exUnremove(${ST.ph},${ST.day},${ei})">↺ Restore: ${ex.n}</button>`).join('')}
+    </div>`;
+  }
 
   // Calves
   if(day.calf){
@@ -1876,7 +2003,10 @@ function renderEx(ex,ei,KEY){
       </div>
       ${curSetsVal!==ex.sets?`<span class="exsw-default-hint">default ${ex.sets}</span>`:''}
     </div>
-    ${(isSwapped||curSetsVal!==ex.sets)?`<button class="exsw-reset" onclick="exResetOv(${ph},${day},${ei})">↺ Reset to default</button>`:''}
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      ${(isSwapped||curSetsVal!==ex.sets)?`<button class="exsw-reset" onclick="exResetOv(${ph},${day},${ei})">↺ Reset to default</button>`:''}
+      <button class="exsw-reset" onclick="if(confirm('Remove ${escAttr(ex.n).replace(/'/g,"\\'")}${isSwapped?' (currently swapped)':''} from this phase? You can restore it anytime.'))exRemove(${ph},${day},${ei})">🗑 Remove from this phase</button>
+    </div>
   </div>`;
 
   let H=`<div class="ec${allDone?' ok':''}${isOpt?' opt-box':''}" id="card_${EK}">`;
@@ -2613,6 +2743,18 @@ function generateExportText(){
             }
           }
         });
+        // Custom (user-added) exercises
+        getCustomExs(pIdx,d).forEach(item=>{
+          const KEY=dk(pIdx,wk,d),EK=ek(KEY,item.id),sets=item.sets||3;
+          if(!item.n)return;
+          for(let s=0;s<sets;s++){
+            const lg=ST.logs[sk(EK,s)];
+            if(lg&&lg.weight&&parseFloat(lg.weight)>0){
+              const w=parseFloat(lg.weight),r=parseInt(lg.reps)||0;
+              if(!prMap[item.n]||w>prMap[item.n].w||(w===prMap[item.n].w&&r>prMap[item.n].r))prMap[item.n]={w,r};
+            }
+          }
+        });
         // Calves
         if(day.calf)CALF[day.calf].ex.forEach((c,ci)=>{
           const KEY=dk(pIdx,wk,d);
@@ -2656,6 +2798,15 @@ function generateExportText(){
         if(lg&&lg.weight)sets.push(`${lg.weight}×${lg.reps||'?'}`);
       }
       if(sets.length)dayLog.push(`${eff.n.replace(/Barbell |Dumbbell |Seated |Standing |Single-Arm /g,'')}:${sets.join('/')}`);
+    });
+    // Custom (user-added) exercises
+    getCustomExs(ST.ph,d).forEach(item=>{
+      const EK=ek(KEY,item.id),sets=[];
+      for(let s=0;s<(item.sets||3);s++){
+        const lg=ST.logs[sk(EK,s)];
+        if(lg&&lg.weight)sets.push(`${lg.weight}×${lg.reps||'?'}`);
+      }
+      if(sets.length&&item.n)dayLog.push(`${item.n}:${sets.join('/')}`);
     });
     // Calf
     if(day.calf)CALF[day.calf].ex.forEach((c,ci)=>{
@@ -3025,6 +3176,7 @@ function gpAllExerciseNames(){
   const names=[...GP_EXERCISES];
   const extra=new Set();
   if(ST.exOv)Object.values(ST.exOv).forEach(ov=>{if(ov&&ov.name&&!names.includes(ov.name))extra.add(ov.name);});
+  if(ST.customExs)Object.values(ST.customExs).forEach(arr=>{(arr||[]).forEach(item=>{if(item.n&&!names.includes(item.n))extra.add(item.n);});});
   return names.concat([...extra].sort());
 }
 
@@ -3041,6 +3193,18 @@ function gpGetHistory(exName){
           if(eff.n!==exName)return;
           const KEY=dk(ph,wk,d),EK=ek(KEY,ei);
           for(let s=0;s<eff.sets;s++){
+            const lg=ST.logs[sk(EK,s)];
+            if(lg&&lg.weight&&parseFloat(lg.weight)>0){
+              const w=parseFloat(lg.weight),r=parseInt(lg.reps)||0;
+              if(!best||w>best.weight||(w===best.weight&&r>best.reps))best={weight:w,reps:r};
+            }
+          }
+        });
+        // Custom (user-added) exercises
+        getCustomExs(ph,d).forEach(item=>{
+          if(item.n!==exName)return;
+          const KEY=dk(ph,wk,d),EK=ek(KEY,item.id),sets=item.sets||3;
+          for(let s=0;s<sets;s++){
             const lg=ST.logs[sk(EK,s)];
             if(lg&&lg.weight&&parseFloat(lg.weight)>0){
               const w=parseFloat(lg.weight),r=parseInt(lg.reps)||0;
@@ -3206,6 +3370,18 @@ function gpWeekBests(targetGw){
             if(lg&&lg.weight&&parseFloat(lg.weight)>0){
               const w=parseFloat(lg.weight),r=parseInt(lg.reps)||0;
               if(!bests[eff.n]||w>bests[eff.n].weight)bests[eff.n]={weight:w,reps:r};
+            }
+          }
+        });
+        // Custom (user-added) exercises
+        getCustomExs(ph,d).forEach(item=>{
+          if(!item.n)return;
+          const KEY=dk(ph,wk,d),EK=ek(KEY,item.id),sets=item.sets||3;
+          for(let s=0;s<sets;s++){
+            const lg=ST.logs[sk(EK,s)];
+            if(lg&&lg.weight&&parseFloat(lg.weight)>0){
+              const w=parseFloat(lg.weight),r=parseInt(lg.reps)||0;
+              if(!bests[item.n]||w>bests[item.n].weight)bests[item.n]={weight:w,reps:r};
             }
           }
         });

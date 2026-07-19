@@ -820,6 +820,51 @@ const WU=[
   {s:'W4',p:'90%',r:'1', rest:'2–3 min',tip:'One heavy single, then go to work'},
 ];
 
+// Dynamic mobility warm-up, done BEFORE the loading-ramp (WU) table above.
+// Indexed by day number (0=Mon/Back … 4=Fri/Arms) — applies every week, every
+// phase, regardless of A/B variant, since it targets the joint/muscle group
+// for that day rather than any specific exercise. Bodyweight only, ~4-5 min.
+const DYNAMIC_WARMUP=[
+  // Day 0 — Back & Abs
+  {title:'Back & Abs',precardio:null,moves:[
+    {n:'Arm Circles (fwd + back)',d:'20 sec each direction'},
+    {n:'Cat-Cow',d:'8-10 reps'},
+    {n:'Scapular Pull-Ups (on any bar)',d:'10 reps'},
+    {n:'Band-Free Pull-Apart (arms out, squeeze)',d:'15 reps'},
+    {n:"World's Greatest Stretch (rotational)",d:'5 reps each side'},
+  ]},
+  // Day 1 — Chest & HIIT
+  {title:'Chest',precardio:null,moves:[
+    {n:'Arm Circles (fwd + back)',d:'20 sec each direction'},
+    {n:'Chest Opener (clasp hands behind back, lift)',d:'30 sec'},
+    {n:'Push-Up to Downward Dog',d:'8 reps'},
+    {n:'Wall Slides (posture/scap activation)',d:'10 reps'},
+  ]},
+  // Day 2 — Legs & Abs
+  {title:'Legs',precardio:{n:'Light Cycling',d:'3-4 min, easy pace — synovial fluid/knee lubrication before squatting, not a cardio session'},moves:[
+    {n:'Leg Swings (front-back, holding support)',d:'10 each leg'},
+    {n:'Leg Swings (side-side)',d:'10 each leg'},
+    {n:'Bodyweight Glute Bridge',d:'12 reps'},
+    {n:'Ankle Circles',d:'10 each direction'},
+    {n:'Bodyweight Squats (shallow, controlled — ease into knee)',d:'10 reps'},
+  ]},
+  // Day 3 — Shoulders & HIIT
+  {title:'Shoulders',precardio:null,moves:[
+    {n:'Arm Circles (fwd + back)',d:'20 sec each direction'},
+    {n:'Band-Free External Rotation (elbow at side, rotate out)',d:'12 reps'},
+    {n:'Scapular Wall Slides',d:'10 reps'},
+    {n:'Shoulder Dislocates (broomstick/towel, wide grip)',d:'8 reps'},
+    {n:'Arm Swings (across body)',d:'15 reps'},
+  ]},
+  // Day 4 — Arms & Abs
+  {title:'Arms',precardio:null,moves:[
+    {n:'Arm Circles (fwd + back)',d:'20 sec each direction'},
+    {n:'Wrist Circles + Flexor/Extensor Stretch',d:'20 sec each'},
+    {n:'Elbow Circles',d:'10 each direction'},
+    {n:'Arm Swings (across body)',d:'15 reps'},
+  ]},
+];
+
 const CALF={
   A:{label:'Heavy — 4–6 reps',note:'3 × 4–6 · Rest 2 min · Full ROM: heel below platform 2s, drive to tiptoe 1s',
     ex:[{n:'Standing Calf Raise',s:3,r:'4–6'}]},
@@ -1858,6 +1903,25 @@ function renderWorkout(){
       padding:11px 14px;margin-bottom:13px">
       <div style="color:var(--ac2);font-size:12px;font-weight:700;margin-bottom:3px">🔄 DELOAD WEEK — Active Recovery</div>
       <div style="font-size:10px;color:var(--m2);line-height:1.6">Use the exact same weights as your last working week. 2 sets only. The goal is recovery and supercompensation — not pushing limits.</div>
+    </div>`;
+  }
+
+  // Dynamic mobility warm-up (bodyweight, ~4-5 min, before the loading ramp below)
+  const dw=DYNAMIC_WARMUP[ST.day];
+  if(dw){
+    H+=`<div class="sdiv"><span class="sdivl">Dynamic Warm-Up — ${dw.title}</span></div>
+    <div class="wucard">
+      <div class="wuh">🔄 Loosen Up First (bodyweight, ~4-5 min)</div>
+      ${dw.precardio?`<div style="display:flex;justify-content:space-between;align-items:center;
+        background:rgba(41,182,246,.06);border:1px solid rgba(41,182,246,.15);border-radius:6px;
+        padding:6px 10px;margin-bottom:8px">
+        <span style="font-size:11px;color:var(--ac3);font-weight:700">🚴 ${dw.precardio.n}</span>
+        <span style="font-size:10px;color:var(--m2)">${dw.precardio.d}</span>
+      </div>`:''}
+      ${dw.moves.map(m=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:4px 0;border-top:1px solid var(--bdr)">
+        <span style="font-size:11px;color:var(--txt)">${m.n}</span>
+        <span style="font-size:10px;color:var(--m2);font-family:'DM Mono',monospace;flex-shrink:0;margin-left:8px">${m.d}</span>
+      </div>`).join('')}
     </div>`;
   }
 

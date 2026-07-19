@@ -870,53 +870,65 @@ const SUBSTITUTES={
 
 // Override key is independent of week — applies to every week within a given phase,
 // so swaps persist across the whole phase without touching other phases or logged data.
-const ovKey=(ph,day,ei)=>`p${ph}d${day}e${ei}`;
-function getExOv(ph,day,ei){return (ST.exOv&&ST.exOv[ovKey(ph,day,ei)])||null;}
-function setExOv(ph,day,ei,patch){
+// EXCEPTION: on A/B alternating days (day.altB present), slot index `ei` refers to a
+// DIFFERENT exercise on Week A vs Week B, so the key must also carry the variant —
+// otherwise a swap made on an A week would incorrectly bleed into the B week's slot.
+// For every day WITHOUT altB (all of Phase 1, every deload) the key format below is
+// byte-for-byte identical to before, so all existing stored overrides are unaffected.
+function ovKey(ph,day,ei,wk){
+  const d=PHASES[ph]&&PHASES[ph].days[day];
+  if(d&&d.altB){
+    const v=(wk%2===1)?'B':'A';
+    return `p${ph}d${day}v${v}e${ei}`;
+  }
+  return `p${ph}d${day}e${ei}`;
+}
+function getExOv(ph,wk,day,ei){return (ST.exOv&&ST.exOv[ovKey(ph,day,ei,wk)])||null;}
+function setExOv(ph,wk,day,ei,patch){
   if(!ST.exOv)ST.exOv={};
-  const k=ovKey(ph,day,ei);
+  const k=ovKey(ph,day,ei,wk);
   ST.exOv[k]={...(ST.exOv[k]||{}),...patch};
   save();
 }
-function clearExOvField(ph,day,ei,field){
+function clearExOvField(ph,wk,day,ei,field){
   if(!ST.exOv)return;
-  const k=ovKey(ph,day,ei);
+  const k=ovKey(ph,day,ei,wk);
   if(ST.exOv[k]){
     delete ST.exOv[k][field];
     if(Object.keys(ST.exOv[k]).length===0)delete ST.exOv[k];
     save();
   }
 }
-function exResetOv(ph,day,ei){
+function exResetOv(ph,wk,day,ei){
   if(!ST.exOv)return;
-  delete ST.exOv[ovKey(ph,day,ei)];
+  delete ST.exOv[ovKey(ph,day,ei,wk)];
   save();renderWorkout();
 }
-function getEffectiveEx(baseEx,ph,day,ei){
-  const ov=getExOv(ph,day,ei);
+function getEffectiveEx(baseEx,ph,wk,day,ei){
+  const ov=getExOv(ph,wk,day,ei);
   if(!ov)return baseEx;
   return {...baseEx, n:ov.name||baseEx.n, sets:ov.sets||baseEx.sets};
 }
 function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
-function exSwapPick(ph,day,ei,val){
+function exSwapPick(ph,wk,day,ei,val){
   if(val==='__custom__')return;
-  if(val==='__default__'){clearExOvField(ph,day,ei,'name');}
-  else{setExOv(ph,day,ei,{name:val});}
+  if(val==='__default__'){clearExOvField(ph,wk,day,ei,'name');}
+  else{setExOv(ph,wk,day,ei,{name:val});}
   renderWorkout();
 }
-function exSwapCustom(ph,day,ei,val){
+function exSwapCustom(ph,wk,day,ei,val){
   const n=(val||'').trim();
-  if(!n)clearExOvField(ph,day,ei,'name');
-  else setExOv(ph,day,ei,{name:n});
+  if(!n)clearExOvField(ph,wk,day,ei,'name');
+  else setExOv(ph,wk,day,ei,{name:n});
   renderWorkout();
 }
-function exSetsAdj(ph,day,ei,delta,baseSets){
-  const ov=getExOv(ph,day,ei);
+function exSetsAdj(ph,wk,day,ei,delta,baseSets){
+  const ov=getExOv(ph,wk,day,ei);
   const cur=(ov&&ov.sets)||baseSets;
   const next=Math.max(1,Math.min(8,cur+delta));
-  if(next===baseSets)clearExOvField(ph,day,ei,'sets');
-  else setExOv(ph,day,ei,{sets:next});
+  if(next===baseSets)clearExOvField(ph,wk,day,ei,'sets');
+  else setExOv(ph,wk,day,ei,{sets:next});
   renderWorkout();
 }
 const _openSwapPanels=new Set();
@@ -927,12 +939,12 @@ function toggleSwapPanel(ekid){
 }
 
 // ── Remove / restore a built-in exercise (soft — never wipes logs) ──
-function exRemove(ph,day,ei){
-  setExOv(ph,day,ei,{removed:true});
+function exRemove(ph,wk,day,ei){
+  setExOv(ph,wk,day,ei,{removed:true});
   renderWorkout();
 }
-function exUnremove(ph,day,ei){
-  clearExOvField(ph,day,ei,'removed');
+function exUnremove(ph,wk,day,ei){
+  clearExOvField(ph,wk,day,ei,'removed');
   renderWorkout();
 }
 
@@ -1122,43 +1134,82 @@ const PHASES=[
     E('Seated Triceps Press','acc',2,'4',false,'Rest 1–2 min',''),
    ]},
  ]},
- // ─── PHASE 2 (Weeks 10–17) ──────────────────────────────────────
+ // ─── PHASE 2 (Weeks 10–17) — A/B EXERCISE ALTERNATION ────────────
+ // Odd wk index (0,2,4...) = Variant A. Even wk index (1,3,5...) = Variant B.
+ // Each alternating day defines exs (=A) and altB (=B). See dayExs()/isAltB().
  {label:'Phase 2',short:'P2',weeks:8,isDeload:false,days:[
   {title:'BACK & ABS',sub:'Day 1 — Mon',hasAbs:true,
    exs:[
-    E('Barbell Deadlift','main',3,'4–6',true,'Rest 3–4 min','Brace hard — king of all exercises'),
+    E('Barbell Deadlift','main',2,'4–6',true,'Rest 3–4 min','Brace hard — king of all exercises'),
     E('Barbell Row','main',3,'4–6',false,'Rest 3–4 min',''),
     E('Wide-Grip Pull-Up','main',3,'4–6',false,'Rest 3–4 min','Weighted if possible'),
-    E('Close-Grip Lat Pulldown','opt',3,'6–8',false,'Rest 2 min','Optional'),
+    E('Weighted Hyperextension','acc',2,'10–12',false,'Rest 90s','Strict — plate on chest, no hip-driven momentum. Trains spinal extension dynamically, complementing deadlift\'s isometric bracing.'),
+   ],
+   altB:[
+    E('Single-Arm Dumbbell Row','main',3,'8–10',true,'Rest 2–3 min','Deep stretch at bottom, full contraction at top — range a barbell can\'t reach'),
+    E('T-Bar Row (Chest-Supported)','main',3,'8–10',false,'Rest 2–3 min','Torso locked on pad — isolates lats/rhomboids without lower-back loading'),
+    E('Underhand Close-Grip Lat Pulldown','acc',3,'6–8',false,'Rest 2 min','Supinated grip — lower-lat bias, different pattern from pull-up'),
+    E('Weighted Hyperextension','acc',2,'10–12',false,'Rest 90s','Strict — plate on chest, no hip-driven momentum'),
    ]},
   {title:'CHEST & HIIT',sub:'Day 2 — Tue',hasHiit:true,
    exs:[
-    E('Incline Barbell Bench Press','main',3,'4–6',true,'Rest 3–4 min','Primary chest mover — go heavy'),
-    E('Incline Dumbbell Bench Press','main',3,'4–6',false,'Rest 3–4 min',''),
-    E('Flat Barbell Bench Press','main',3,'4–6',false,'Rest 3–4 min',''),
+    E('Flat Barbell Bench Press','main',3,'4–6',true,'Rest 3–4 min','Strength anchor — heaviest lift of the day'),
+    E('Incline Dumbbell Bench Press','main',3,'4–6',false,'Rest 3–4 min','Deeper stretch than a barbell allows'),
     E('Weighted Dip (Chest)','main',3,'4–6',false,'Rest 3–4 min','Add belt when bodyweight feels easy'),
+    E('Cable Fly','acc',3,'10–12',false,'Rest 90s','Mid height — full horizontal adduction a press can\'t reach'),
+   ],
+   altB:[
+    E('Guillotine Press','main',3,'6–8',true,'Rest 3–4 min','Upper/clavicular pec bias — go lighter than you think, controlled tempo, bar stops above collarbone. Shoulder-impingement-prone — stop if you feel joint discomfort.'),
+    E('Flat Dumbbell Bench Press','main',3,'4–6',false,'Rest 3–4 min',''),
+    E('Low-to-High Cable Fly','acc',3,'10–12',false,'Rest 90s','Targets upper pec through full stretch'),
+    E('Pec Deck Fly','acc',3,'10–12',false,'Rest 90s',''),
    ]},
-  {title:'LEGS, CALVES & ABS',sub:'Day 3 — Wed',calf:'B',hasAbs:true,
+  {title:'LEGS & ABS',sub:'Day 3 — Wed',hasAbs:true,
    exs:[
-    E('Lying Hamstring Curl','acc',2,'10–12',false,'Rest 90s','Activation — squeeze hard at top, 2s lower'),
-    E('Leg Extension','acc',2,'10–12',false,'Rest 90s','Activation — squeeze quad at top 1s, slow lower'),
-    E('Hack Squat','main',3,'4–6',true,'Rest 3–4 min','Below parallel — brace hard. Targets quads.'),
-    E('Romanian Deadlift','main',3,'4–6',false,'Rest 3–4 min','Hip hinge — feel hamstring stretch, not lower back'),
-    E('Bulgarian Split Squat','main',3,'6–8',false,'Rest 2–3 min','Rear foot elevated — targets glutes & quads. Lean forward slightly for glute bias.'),
+    E('Hack Squat','main',3,'4–6',true,'Rest 3–4 min','Quad-focused: feet low & centered on platform, hip-width or slightly narrower, toes forward. Knees track forward — go easy given knee history, control the descent.'),
+    E('Leg Extension','acc',2,'10–12',false,'Rest 90s','Squeeze quad at top 1s, slow lower'),
+    E('Leg Press','main',3,'8–10',false,'Rest 2–3 min',''),
+    E('Standing Calf Raise','acc',3,'8–10',false,'Rest 90s','Full ROM — heel below platform 2s, drive to tiptoe 1s'),
+   ],
+   altB:[
+    E('Romanian Deadlift','main',3,'4–6',true,'Rest 3–4 min','Hip hinge — feel hamstring stretch, not lower back'),
+    E('Lying Hamstring Curl','acc',2,'10–12',false,'Rest 90s','Squeeze hard at top, 2s lower'),
+    E('Bulgarian Split Squat','main',3,'6–8',false,'Rest 2–3 min','Rear foot elevated — lean forward slightly for glute bias'),
+    E('Single-Leg Dumbbell Calf Raise','acc',3,'12–15 each leg',false,'Rest 60s','One dumbbell in working-side hand, full stretch at bottom — corrects L/R calf imbalance'),
    ]},
   {title:'SHOULDERS & HIIT',sub:'Day 4 — Thu',hasHiit:true,
    exs:[
     E('Seated or Standing Barbell Military Press','main',3,'4–6',true,'Rest 3–4 min','Primary shoulder mover'),
     E('Side Lateral Raise','main',3,'4–6',false,'Rest 2 min',''),
-    E('Rear Delt Dumbbell Fly','main',3,'4–6',false,'Rest 2 min','Glutes against wall — hinge forward, arms arc back. Focus on shoulder blades pinching, not shoulder joint rotating.'),
+    E('Rear Delt Dumbbell Fly','main',3,'4–6',false,'Rest 2 min','Glutes against wall — hinge forward, arms arc back. Focus on shoulder blades pinching.'),
     E('Face Pull','acc',3,'15–20',false,'Rest 90 sec','Cable at face height — external rotation, elbows high'),
+   ],
+   altB:[
+    E('Seated Dumbbell Shoulder Press','main',3,'6–8',true,'Rest 3–4 min',''),
+    E('Cable Lateral Raise','main',3,'10–12',false,'Rest 90s','Constant tension throughout the arc, unlike a dumbbell'),
+    E('Reverse Pec Deck Fly','main',3,'10–12',false,'Rest 90s',''),
+    E('Cable Rear Delt Row','acc',2,'15–20',false,'Rest 60s','Rope at face height, elbows flared wide — rear delt/scap retraction'),
    ]},
-  {title:'ARMS, CALVES & ABS',sub:'Day 5 — Fri',calf:'C',hasAbs:true,
+  {title:'ARMS & ABS',sub:'Day 5 — Fri',hasAbs:true,
    exs:[
     E('Barbell Curl','main',3,'4–6',true,'Rest 3–4 min','Warm up separately'),
+    E('Hammer Curl','acc',3,'8–10',false,'Rest 90s','Neutral grip — brachialis, adds arm width/thickness'),
+    E('Seated Incline DB Curl','acc',3,'4–6',false,'Rest 2–3 min','45–60° incline — full stretch, supinate at top'),
     E('Close-Grip Bench Press','main',3,'4–6',false,'Rest 3–4 min',''),
-    E('Seated Incline DB Curl','acc',3,'4–6',false,'Rest 2–3 min','45–60° incline — arms hang back at bottom for full stretch. Supinate at top. No swinging.'),
+    E('Overhead DB Triceps Extension','acc',3,'8–10',false,'Rest 90s','Loads the long head in a fully stretched position'),
     E('Seated Triceps Press','acc',3,'4–6',false,'Rest 2–3 min',''),
+    E('Wrist Curl','acc',3,'12–15',false,'Rest 60s','Forearm — kept constant every week'),
+    E('Standing Calf Raise','acc',3,'12–15',false,'Rest 60s','Light'),
+   ],
+   altB:[
+    E('EZ-Bar Curl','main',3,'4–6',true,'Rest 3–4 min',''),
+    E('Concentration Curl','acc',3,'10–12',false,'Rest 60s','Peak-contraction bias, short head'),
+    E('Cable Curl','acc',3,'10–12',false,'Rest 90s','Constant tension through full ROM'),
+    E('EZ-Bar Skull Crusher','main',3,'6–8',false,'Rest 2–3 min',''),
+    E('Cable Rope Pushdown','acc',3,'10–12',false,'Rest 90s',''),
+    E('Diamond Push-Up','acc',2,'AMRAP',false,'Rest 90s','Bodyweight finisher — go to near-failure with clean form'),
+    E('Wrist Curl','acc',3,'12–15',false,'Rest 60s','Forearm — kept constant every week'),
+    E('Single-Leg Dumbbell Calf Raise','acc',3,'12–15 each leg',false,'Rest 60s','Light'),
    ]},
  ]},
  // ─── DELOAD 2 ───────────────────────────────────────────────────
@@ -1654,15 +1705,28 @@ const dk=(ph,wk,day)=>`p${ph}w${wk}d${day}`;
 const ek=(d,ei)=>`${d}e${ei}`;
 const sk=(e,s)=>`${e}s${s}`;
 
+// ── A/B exercise-variant resolver ──────────────────────────────
+// A day only alternates if it defines `altB`. Any day without altB
+// (all of Phase 1 + every deload week) is completely unaffected —
+// dayExs() just returns day.exs exactly as before, byte-for-byte.
+function isAltB(ph,wk,day){
+  const d=PHASES[ph].days[day];
+  return !!(d.altB && (wk%2===1));
+}
+function dayExs(ph,wk,day){
+  const d=PHASES[ph].days[day];
+  return isAltB(ph,wk,day) ? d.altB : d.exs;
+}
+
 function isRest(ph,wk,d){return!!ST.rest[dk(ph,wk,d)]}
 function dayDone(ph,wk,d){return!!ST.done[dk(ph,wk,d)]||isRest(ph,wk,d)}
 function weekDone(ph,wk){return PHASES[ph].days.every((_,d)=>dayDone(ph,wk,d))}
 function dayProg(ph,wk,day){
   if(isRest(ph,wk,day))return 100;
-  const d=dk(ph,wk,day),p=PHASES[ph].days[day];
+  const d=dk(ph,wk,day),exs=dayExs(ph,wk,day);
   let tot=0,dn=0;
-  p.exs.forEach((x,ei)=>{
-    const ov=getExOv(ph,day,ei);
+  exs.forEach((x,ei)=>{
+    const ov=getExOv(ph,wk,day,ei);
     if(ov&&ov.removed)return;
     const sets=(ov&&ov.sets)||x.sets;
     for(let s=0;s<sets;s++){tot++;if(ST.logs[sk(ek(d,ei),s)]?.done)dn++;}
@@ -1759,6 +1823,8 @@ function renderOverview(){
 // ═══════════════════════════════════════════════
 function renderWorkout(){
   const p=PHASES[ST.ph],day=p.days[ST.day];
+  const exs=dayExs(ST.ph,ST.wk,ST.day);
+  const altB=isAltB(ST.ph,ST.wk,ST.day);
   const KEY=dk(ST.ph,ST.wk,ST.day);
   const isDone=ST.done[KEY];
   const prog=dayProg(ST.ph,ST.wk,ST.day);
@@ -1766,10 +1832,11 @@ function renderWorkout(){
 
   // Header
   const wlabel=p.weeks>1?`Wk ${ST.wk+1}/${p.weeks} · `:'';
+  const variantTag=day.altB?(altB?' · <span style="color:var(--ac3);font-weight:800">WEEK B</span>':' · <span style="color:var(--ac);font-weight:800">WEEK A</span>'):'';
   H+=`<div class="wh">
     <div>
       <div class="wht">${day.title}</div>
-      <div class="whs">${wlabel}${p.label} · ${day.sub}</div>
+      <div class="whs">${wlabel}${p.label} · ${day.sub}${variantTag}</div>
       <div class="wpb"><div class="wpbi" id="pbar" style="width:${prog}%"></div></div>
     </div>
     <div style="display:flex;gap:6px;align-items:center;flex-shrink:0">
@@ -1795,7 +1862,7 @@ function renderWorkout(){
   }
 
   // Warm-up
-  const wuEx=day.exs.find(x=>x.wu);
+  const wuEx=exs.find(x=>x.wu);
   if(wuEx){
     H+=`<div class="sdiv"><span class="sdivl">Warm-Up — ${wuEx.n}</span></div>
     <div class="wucard">
@@ -1811,8 +1878,8 @@ function renderWorkout(){
   // Exercises
   H+=`<div class="sdiv"><span class="sdivl">Working Sets</span></div>`;
   const removedList=[];
-  day.exs.forEach((ex,ei)=>{
-    const ovc=getExOv(ST.ph,ST.day,ei);
+  exs.forEach((ex,ei)=>{
+    const ovc=getExOv(ST.ph,ST.wk,ST.day,ei);
     if(ovc&&ovc.removed){removedList.push({ex,ei});return;}
     H+=renderEx(ex,ei,KEY);
   });
@@ -1820,7 +1887,7 @@ function renderWorkout(){
   H+=`<button class="abs-add-btn" style="margin-bottom:10px" onclick="addCustomEx(${ST.ph},${ST.day})">＋ Add Custom Exercise</button>`;
   if(removedList.length){
     H+=`<div style="display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px">
-      ${removedList.map(({ex,ei})=>`<button class="lwcopy" style="opacity:.7" onclick="exUnremove(${ST.ph},${ST.day},${ei})">↺ Restore: ${ex.n}</button>`).join('')}
+      ${removedList.map(({ex,ei})=>`<button class="lwcopy" style="opacity:.7" onclick="exUnremove(${ST.ph},${ST.wk},${ST.day},${ei})">↺ Restore: ${ex.n}</button>`).join('')}
     </div>`;
   }
 
@@ -1969,9 +2036,9 @@ function renderWorkout(){
 }
 
 function renderEx(ex,ei,KEY){
-  const ph=ST.ph, day=ST.day;
-  const ov=getExOv(ph,day,ei);
-  const eff=getEffectiveEx(ex,ph,day,ei);
+  const ph=ST.ph, wk=ST.wk, day=ST.day;
+  const ov=getExOv(ph,wk,day,ei);
+  const eff=getEffectiveEx(ex,ph,wk,day,ei);
   const isSwapped=!!(ov&&ov.name);
   const EK=ek(KEY,ei);
   const allDone=Array.from({length:eff.sets},(_,s)=>ST.logs[sk(EK,s)]?.done).every(Boolean);
@@ -1986,26 +2053,26 @@ function renderEx(ex,ei,KEY){
   const swapPanel=`<div class="exsw-panel${_openSwapPanels.has(EK)?' open':''}" id="swpanel_${EK}">
     <div class="exsw-row">
       <span class="exsw-lbl">SWAP TO</span>
-      <select class="exsw-sel" onchange="exSwapPick(${ph},${day},${ei},this.value);if(this.value==='__custom__')document.getElementById('exswtxt_${EK}').focus();">
+      <select class="exsw-sel" onchange="exSwapPick(${ph},${wk},${day},${ei},this.value);if(this.value==='__custom__')document.getElementById('exswtxt_${EK}').focus();">
         <option value="__default__">Default: ${ex.n}</option>
         ${subs.map(s=>`<option value="${escAttr(s)}">${s}</option>`).join('')}
         <option value="__custom__">Custom…</option>
       </select>
     </div>
     <input id="exswtxt_${EK}" class="exsw-custom" type="text" placeholder="Or type any custom exercise name"
-      value="${isSwapped?escAttr(ov.name):''}" onchange="exSwapCustom(${ph},${day},${ei},this.value)">
+      value="${isSwapped?escAttr(ov.name):''}" onchange="exSwapCustom(${ph},${wk},${day},${ei},this.value)">
     <div class="exsw-row">
       <span class="exsw-lbl">SETS</span>
       <div class="exsw-stepper">
-        <button onclick="exSetsAdj(${ph},${day},${ei},-1,${ex.sets})">−</button>
+        <button onclick="exSetsAdj(${ph},${wk},${day},${ei},-1,${ex.sets})">−</button>
         <span class="exsw-setnum">${curSetsVal}</span>
-        <button onclick="exSetsAdj(${ph},${day},${ei},1,${ex.sets})">+</button>
+        <button onclick="exSetsAdj(${ph},${wk},${day},${ei},1,${ex.sets})">+</button>
       </div>
       ${curSetsVal!==ex.sets?`<span class="exsw-default-hint">default ${ex.sets}</span>`:''}
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
-      ${(isSwapped||curSetsVal!==ex.sets)?`<button class="exsw-reset" onclick="exResetOv(${ph},${day},${ei})">↺ Reset to default</button>`:''}
-      <button class="exsw-reset" onclick="if(confirm('Remove ${escAttr(ex.n).replace(/'/g,"\\'")}${isSwapped?' (currently swapped)':''} from this phase? You can restore it anytime.'))exRemove(${ph},${day},${ei})">🗑 Remove from this phase</button>
+      ${(isSwapped||curSetsVal!==ex.sets)?`<button class="exsw-reset" onclick="exResetOv(${ph},${wk},${day},${ei})">↺ Reset to default</button>`:''}
+      <button class="exsw-reset" onclick="if(confirm('Remove ${escAttr(ex.n).replace(/'/g,"\\'")}${isSwapped?' (currently swapped)':''} from this phase? You can restore it anytime.'))exRemove(${ph},${wk},${day},${ei})">🗑 Remove from this phase</button>
     </div>
   </div>`;
 
@@ -2054,8 +2121,14 @@ function renderEx(ex,ei,KEY){
 // Returns prev-week log data for each set of a given exercise.
 // Looks back one week in same phase; if wk=0, steps back to previous non-deload phase's last week.
 function getPrevWeekExData(ph,wk,day,ei,sets){
-  let prevPh=ph,prevWk=wk-1;
+  // A/B alternating days: same variant last appeared 2 weeks back, not 1 —
+  // stepping back only 1 week would land on the OTHER variant's slot data.
+  const isAlt=!!(PHASES[ph].days[day].altB);
+  const step=isAlt?2:1;
+  let prevPh=ph,prevWk=wk-step;
   if(prevWk<0){
+    // Crossing a phase boundary — fall back to the previous non-deload phase's
+    // last week (best-effort; exact variant match across phases isn't guaranteed).
     let pp=ph-1;
     while(pp>=0){
       if(!PHASES[pp].isDeload){prevPh=pp;prevWk=PHASES[pp].weeks-1;break;}
@@ -2732,8 +2805,8 @@ function generateExportText(){
   PHASES.forEach((phase,pIdx)=>{
     for(let wk=0;wk<phase.weeks;wk++){
       phase.days.forEach((day,d)=>{
-        day.exs.forEach((ex,ei)=>{
-          const eff=getEffectiveEx(ex,pIdx,d,ei);
+        dayExs(pIdx,wk,d).forEach((ex,ei)=>{
+          const eff=getEffectiveEx(ex,pIdx,wk,d,ei);
           const KEY=dk(pIdx,wk,d),EK=ek(KEY,ei);
           for(let s=0;s<eff.sets;s++){
             const lg=ST.logs[sk(EK,s)];
@@ -2789,9 +2862,9 @@ function generateExportText(){
   ph.days.forEach((day,d)=>{
     const KEY=dk(ST.ph,ST.wk,d);
     const dayLog=[];
-    day.exs.forEach((ex,ei)=>{
+    dayExs(ST.ph,ST.wk,d).forEach((ex,ei)=>{
       const EK=ek(KEY,ei);
-      const eff=getEffectiveEx(ex,ST.ph,d,ei);
+      const eff=getEffectiveEx(ex,ST.ph,ST.wk,d,ei);
       const sets=[];
       for(let s=0;s<eff.sets;s++){
         const lg=ST.logs[sk(EK,s)];
@@ -3165,7 +3238,14 @@ const GP_EXERCISES=[
   'Lying Hamstring Curl','Leg Extension','Hack Squat','Romanian Deadlift','Bulgarian Split Squat',
   'Seated or Standing Barbell Military Press','Side Lateral Raise','Rear Delt Dumbbell Fly','Face Pull',
   'Barbell Curl','Close-Grip Bench Press','Seated Incline DB Curl','Seated Triceps Press',
-  'Standing Calf Raise','Cable Crunch','Hanging Leg Raise','Wood Chopper'
+  'Standing Calf Raise','Cable Crunch','Hanging Leg Raise','Wood Chopper',
+  // Phase 2 A/B variant additions
+  'Weighted Hyperextension','Single-Arm Dumbbell Row','T-Bar Row (Chest-Supported)','Underhand Close-Grip Lat Pulldown',
+  'Cable Fly','Guillotine Press','Flat Dumbbell Bench Press','Low-to-High Cable Fly','Pec Deck Fly',
+  'Leg Press','Single-Leg Dumbbell Calf Raise',
+  'Seated Dumbbell Shoulder Press','Cable Lateral Raise','Reverse Pec Deck Fly','Cable Rear Delt Row',
+  'Hammer Curl','Overhead DB Triceps Extension','Wrist Curl',
+  'EZ-Bar Curl','Concentration Curl','Cable Curl','EZ-Bar Skull Crusher','Cable Rope Pushdown','Diamond Push-Up'
 ];
 let gpSelectedEx=GP_EXERCISES[0];
 let gpTooltipDiv=null;
@@ -3188,8 +3268,8 @@ function gpGetHistory(exName){
       gw++;
       let best=null;
       phase.days.forEach((day,d)=>{
-        day.exs.forEach((ex,ei)=>{
-          const eff=getEffectiveEx(ex,ph,d,ei);
+        dayExs(ph,wk,d).forEach((ex,ei)=>{
+          const eff=getEffectiveEx(ex,ph,wk,d,ei);
           if(eff.n!==exName)return;
           const KEY=dk(ph,wk,d),EK=ek(KEY,ei);
           for(let s=0;s<eff.sets;s++){
@@ -3345,7 +3425,7 @@ function gpWeeksWithData(){
       gw++;
       let has=false;
       phase.days.forEach((day,d)=>{
-        day.exs.forEach((ex,ei)=>{
+        dayExs(ph,wk,d).forEach((ex,ei)=>{
           const KEY=dk(ph,wk,d),EK=ek(KEY,ei);
           for(let s=0;s<ex.sets;s++){if(ST.logs[sk(EK,s)]?.weight)has=true;}
         });
@@ -3362,8 +3442,8 @@ function gpWeekBests(targetGw){
     for(let wk=0;wk<phase.weeks;wk++){
       gw++;if(gw!==targetGw)continue;
       phase.days.forEach((day,d)=>{
-        day.exs.forEach((ex,ei)=>{
-          const eff=getEffectiveEx(ex,ph,d,ei);
+        dayExs(ph,wk,d).forEach((ex,ei)=>{
+          const eff=getEffectiveEx(ex,ph,wk,d,ei);
           const KEY=dk(ph,wk,d),EK=ek(KEY,ei);
           for(let s=0;s<eff.sets;s++){
             const lg=ST.logs[sk(EK,s)];

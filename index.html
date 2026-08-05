@@ -921,7 +921,8 @@ const SUBSTITUTES={
 // For every day WITHOUT altB (all of Phase 1, every deload) the key format below is
 // byte-for-byte identical to before, so all existing stored overrides are unaffected.
 function ovKey(ph,day,ei,wk){
-  const d=PHASES[ph]&&PHASES[ph].days[day];
+  const days=PHASES[ph]&&daysFor(ph,wk);
+  const d=days&&days[day];
   if(d&&d.altB){
     const v=(wk%2===1)?'B':'A';
     return `p${ph}d${day}v${v}e${ei}`;
@@ -1601,6 +1602,121 @@ const PHASES=[
 ];
 
 // ═══════════════════════════════════════════════
+// NEW SPLIT — Upper/Lower/Push/Pull/Legs
+// Effective from Phase 2, Week 5 onward. Weeks 1–4 of Phase 2 (above) and all
+// of Phase 1 / Deload 1 are untouched — daysFor() below routes to them as-is.
+// Mesocycle rotates at PHASE BOUNDARIES only (confirmed: whole 8-week phase
+// per variant, not a mid-phase swap). Deload weeks under the new split reuse
+// whatever meso position the surrounding phase is on, 2 sets, low end of rep range.
+// ═══════════════════════════════════════════════
+
+// phase index → meso (1 = "Current" column, 2 = "Swap" column) for ph>=2.
+// P2(wk5-8)=1, D2=1, P3=2, D3=2, P4=1, D4=1, P5=2, D5=2, P6=1, D6=1
+const MESO_MAP={2:1,3:1,4:2,5:2,6:1,7:1,8:2,9:2,10:1,11:1};
+
+// New calf profiles — Tue (quad day) 3×12–15, Fri (glute/ham day) 3×15–20.
+// Replaces the old A/B/C rotation entirely from Phase 2 Week 5 onward.
+CALF.TUEQ={label:'Quad Day — 12–15 reps',note:'3 × 12–15 · Rest 90s · Full ROM: heel below platform 2s, drive to tiptoe 1s',
+  ex:[{n:'Standing Calf Raise',s:3,r:'12–15'}]};
+CALF.TUEQ_DL={label:'Quad Day (Deload) — 12 reps',note:'2 × 12 · Rest 90s · Full ROM: heel below platform 2s, drive to tiptoe 1s',
+  ex:[{n:'Standing Calf Raise',s:2,r:'12'}]};
+CALF.FRIL={label:'Leg Day — 15–20 reps',note:'3 × 15–20 · Rest 60s · Full ROM: heel below platform 2s, drive to tiptoe 1s',
+  ex:[{n:'Standing Calf Raise',s:3,r:'15–20'}]};
+CALF.FRIL_DL={label:'Leg Day (Deload) — 15 reps',note:'2 × 15 · Rest 60s · Full ROM: heel below platform 2s, drive to tiptoe 1s',
+  ex:[{n:'Standing Calf Raise',s:2,r:'15'}]};
+
+// Builds the 5-day New Split array for a given meso (1 or 2) and deload flag.
+// Deload: 2 sets instead of 3, low end of the stated rep range, same exercises
+// (no rotation swap happens mid-deload — deload shares its phase's meso).
+// Exercise names reused from the existing pool where it's the same lift, so
+// Gym Progress PR history stays continuous instead of fragmenting.
+function mkNewSplitDays(meso,deload){
+  const sq  = meso===1?'Hack Squat':'Leg Press';
+  const bss = meso===1?'Bulgarian Split Squat':'Lunges';
+  const dip = meso===1?'Weighted Dip (Chest)':'Close-Grip Bench Press';
+  const fly = meso===1?'Pec Deck Fly':'High-to-Low Cable Fly';
+  const lat = meso===1?'Side Lateral Raise':'Upright Row';
+  const oh  = meso===1?'Overhead DB Triceps Extension':'Single-Arm Overhead DB Extension';
+  const row = meso===1?'T-Bar Row (Chest-Supported)':'Barbell Row';
+  const pd  = meso===1?'Close-Grip Pulldown':'Wide-Grip Pulldown';
+  const rd  = meso===1?'Face Pull':'Rear Delt Dumbbell Fly';
+  const bic1= meso===1?'Seated Incline DB Curl':'Lying Cable Curl';
+  const bic2= meso===1?'Preacher Curl':'Concentration Curl';
+  const sumo= meso===1?'Sumo Squat':'Barbell Squat';
+
+  const S=deload?2:3;
+  const R=full=>deload?full.split(/[–-]/)[0]:full; // deload → low end of range
+  const rMain='Rest 3–4 min', rMain2='Rest 2–3 min', rAcc='Rest 90s', rAccL='Rest 60s';
+
+  return [
+   {title:'UPPER',sub:'Day 1 — Mon',hasAbs:true,exs:[
+     E('Incline Barbell Bench Press','main',S,R('5–8'),true,rMain,''),
+     E('Dumbbell Incline Fly','acc',S,R('10–12'),false,rAcc,''),
+     E('Dumbbell Pullover','acc',S,R('10–12'),false,rAcc,''),
+     E('Wide-Grip Pull-Up','main',S,R('6–10'),false,rMain2,''),
+     E('Single-Arm Dumbbell Row','main',S,R('6–10'),false,rMain2,''),
+     E('Seated or Standing Barbell Military Press','main',S,R('6–10'),false,rMain2,''),
+   ]},
+   {title:'LOWER (QUAD)',sub:'Day 2 — Tue',hasHiit:true,calf:deload?'TUEQ_DL':'TUEQ',exs:[
+     E(sq,'main',S,R('6–10'),true,rMain2,''),
+     E('Leg Extension','acc',S,R('12–15'),false,rAcc,''),
+     E(bss,'main',S,R('8–10'),false,rMain2,''),
+     E('Hip Abduction','acc',S,R('12–15'),false,rAcc,''),
+   ]},
+   {title:'PUSH',sub:'Day 3 — Wed',hasAbs:true,exs:[
+     E('Flat Dumbbell Bench Press','main',S,R('8–10'),true,rMain2,''),
+     E(dip,'main',S,R('8–12'),false,rMain2,''),
+     E(fly,'acc',S,R('12–15'),false,rAcc,''),
+     E(lat,'acc',S,R('12–15'),false,rAcc,''),
+     E('Dumbbell Shrugs','acc',S,R('10–15'),false,rAcc,''),
+     E('Cable Rope Pushdown','acc',S,R('10–12'),false,rAcc,''),
+     E('EZ-Bar Skull Crusher','acc',S,R('8–10'),false,rAcc,''),
+     E(oh,'acc',S,R('10–12'),false,rAccL,''),
+   ]},
+   {title:'PULL',sub:'Day 4 — Thu',hasHiit:true,exs:[
+     E(row,'main',S,R('8–10'),true,rMain2,''),
+     E(pd,'main',S,R('10–12'),false,rMain2,''),
+     E('Weighted Hyperextension','acc',S,R('12–15'),false,rAcc,''),
+     E(rd,'acc',S,R('12–15'),false,rAcc,''),
+     E(bic1,'acc',S,R('10–12'),false,rAcc,''),
+     E('Barbell Curl','acc',S,R('8–10'),false,rAcc,''),
+     E('Hammer Curl','acc',S,R('10–12'),false,rAcc,''),
+     E(bic2,'acc',S,R('10–12'),false,rAccL,''),
+   ]},
+   {title:'LEGS (GLUTE/HAM)',sub:'Day 5 — Fri',hasAbs:true,calf:deload?'FRIL_DL':'FRIL',exs:[
+     E('Barbell Deadlift','main',S,R('5–6'),true,rMain,''),
+     E(sumo,'main',S,R('8–10'),false,rMain2,''),
+     E('Lying Hamstring Curl','acc',S,R('10–12'),false,rAcc,''),
+     E('Hip Adduction','acc',S,R('12–15'),false,rAcc,''),
+   ]},
+  ];
+}
+
+// Precomputed — meso 1/2 × work/deload
+const NEW_SPLIT_DAYS={
+  1:{work:mkNewSplitDays(1,false),deload:mkNewSplitDays(1,true)},
+  2:{work:mkNewSplitDays(2,false),deload:mkNewSplitDays(2,true)},
+};
+
+// THE single source of truth for "which 5 days apply to this phase+week".
+// ph<2            → Phase 1 / Deload 1, untouched.
+// ph===2, wk<4     → Phase 2 weeks 1–4, untouched (existing A/B content).
+// ph===2, wk>=4    → Phase 2 weeks 5–8, New Split, meso 1 (the initial cutover).
+// ph>=3            → New Split, meso from MESO_MAP, deload variant if applicable.
+function daysFor(ph,wk){
+  if(ph<2)return PHASES[ph].days;
+  if(ph===2){
+    if(wk<4)return PHASES[2].days;
+    return NEW_SPLIT_DAYS[1].work;
+  }
+  const meso=MESO_MAP[ph];
+  return NEW_SPLIT_DAYS[meso][PHASES[ph].isDeload?'deload':'work'];
+}
+function usesNewSplit(ph,wk){return ph>=3||(ph===2&&wk>=4);}
+function dayIconsFor(ph,wk){return usesNewSplit(ph,wk)?['UPPER','LOWER','PUSH','PULL','LEGS']:['BACK','CHEST','LEGS','DELTS','ARMS'];}
+function dayNamesFor(ph,wk){return usesNewSplit(ph,wk)?['Mon(Upper)','Tue(Lower)','Wed(Push)','Thu(Pull)','Fri(Legs)']:['Mon(Back)','Tue(Chest)','Wed(Legs)','Thu(Delts)','Fri(Arms)'];}
+
+// ═══════════════════════════════════════════════
 // FIREBASE CONFIG
 // ═══════════════════════════════════════════════
 const firebaseConfig = {
@@ -1755,17 +1871,17 @@ const sk=(e,s)=>`${e}s${s}`;
 // (all of Phase 1 + every deload week) is completely unaffected —
 // dayExs() just returns day.exs exactly as before, byte-for-byte.
 function isAltB(ph,wk,day){
-  const d=PHASES[ph].days[day];
+  const d=daysFor(ph,wk)[day];
   return !!(d.altB && (wk%2===1));
 }
 function dayExs(ph,wk,day){
-  const d=PHASES[ph].days[day];
+  const d=daysFor(ph,wk)[day];
   return isAltB(ph,wk,day) ? d.altB : d.exs;
 }
 
 function isRest(ph,wk,d){return!!ST.rest[dk(ph,wk,d)]}
 function dayDone(ph,wk,d){return!!ST.done[dk(ph,wk,d)]||isRest(ph,wk,d)}
-function weekDone(ph,wk){return PHASES[ph].days.every((_,d)=>dayDone(ph,wk,d))}
+function weekDone(ph,wk){return daysFor(ph,wk).every((_,d)=>dayDone(ph,wk,d))}
 function dayProg(ph,wk,day){
   if(isRest(ph,wk,day))return 100;
   const d=dk(ph,wk,day),exs=dayExs(ph,wk,day);
@@ -1825,7 +1941,7 @@ function renderWeeks(){
   const lbl=document.createElement('span');lbl.className='wlbl';lbl.textContent='WEEK';bar.appendChild(lbl);
   for(let w=0;w<p.weeks;w++){
     const wd=weekDone(ST.ph,w);const wa=w===ST.wk;
-    const dots=p.days.map((_,d)=>`<div class="wd${isRest(ST.ph,w,d)?' rest':dayDone(ST.ph,w,d)?' ok':''}"></div>`).join('');
+    const dots=daysFor(ST.ph,w).map((_,d)=>`<div class="wd${isRest(ST.ph,w,d)?' rest':dayDone(ST.ph,w,d)?' ok':''}"></div>`).join('');
     const b=document.createElement('button');
     b.className='wchip'+(wa?' on':'')+(wd?' all-done':'');
     b.innerHTML=`<span class="wn">${w+1}</span><div class="wdots">${dots}</div>`;
@@ -1836,9 +1952,9 @@ function renderWeeks(){
 
 function renderDays(){
   const bar=document.getElementById('dayBar');bar.innerHTML='';
-  const p=PHASES[ST.ph];
-  const icons=['BACK','CHEST','LEGS','DELTS','ARMS'];
-  p.days.forEach((d,i)=>{
+  const days=daysFor(ST.ph,ST.wk);
+  const icons=dayIconsFor(ST.ph,ST.wk);
+  days.forEach((d,i)=>{
     const dn=dayDone(ST.ph,ST.wk,i);const ia=i===ST.day;const rd=isRest(ST.ph,ST.wk,i);
     const b=document.createElement('button');
     b.className='dchip'+(ia?' on':'')+(rd?' rest':dn?' done':'');
@@ -1851,7 +1967,7 @@ function renderDays(){
 function renderOverview(){
   const p=PHASES[ST.ph];
   let tot=0,dn=0;
-  for(let w=0;w<p.weeks;w++)p.days.forEach((_,d)=>{
+  for(let w=0;w<p.weeks;w++)daysFor(ST.ph,w).forEach((_,d)=>{
     if(isRest(ST.ph,w,d))return; // exclude rest days from total
     tot++;if(dayDone(ST.ph,w,d))dn++;
   });
@@ -1867,7 +1983,7 @@ function renderOverview(){
 // RENDER WORKOUT
 // ═══════════════════════════════════════════════
 function renderWorkout(){
-  const p=PHASES[ST.ph],day=p.days[ST.day];
+  const p=PHASES[ST.ph],day=daysFor(ST.ph,ST.wk)[ST.day];
   const exs=dayExs(ST.ph,ST.wk,ST.day);
   const altB=isAltB(ST.ph,ST.wk,ST.day);
   const KEY=dk(ST.ph,ST.wk,ST.day);
@@ -1994,7 +2110,8 @@ function renderWorkout(){
     const absData=ST.logs[abk]||{exs:[],done:false};
     const absExs=absData.exs||[];
     const absOpts=['Cable Crunch','Hanging Leg Raise','Hanging Side Oblique','Wood Chopper',
-      'Weighted Crunch','Ab Wheel Rollout','Dragon Flag','Toe Touch','Plank','Stomach Vacuum','Other'];
+      'Weighted Crunch','Ab Wheel Rollout','Dragon Flag','Toe Touch','Plank','Stomach Vacuum',
+      'Russian Twist','Lying Cable Leg Raise','Dead Bug','Other'];
     const absRowsHTML=absExs.length===0
       ?'<div style="font-size:10px;color:var(--m1);padding:4px 0;font-style:italic">No exercises logged yet.</div>'
       :absExs.map((ex,xi)=>`
@@ -2187,7 +2304,7 @@ function renderEx(ex,ei,KEY){
 function getPrevWeekExData(ph,wk,day,ei,sets){
   // A/B alternating days: same variant last appeared 2 weeks back, not 1 —
   // stepping back only 1 week would land on the OTHER variant's slot data.
-  const isAlt=!!(PHASES[ph].days[day].altB);
+  const isAlt=!!(daysFor(ph,wk)[day].altB);
   const step=isAlt?2:1;
   let prevPh=ph,prevWk=wk-step;
   if(prevWk<0){
@@ -2199,6 +2316,17 @@ function getPrevWeekExData(ph,wk,day,ei,sets){
       pp--;
     }
     if(prevWk<0)return Array(sets).fill(null);
+  }
+  // Guard: only surface "last week" data if this slot is the SAME exercise in
+  // both weeks. Without this, crossing the old→new split boundary or a
+  // mesocycle rotation swap would silently show a different lift's numbers
+  // (e.g. Deadlift PR next to a Leg Press input) — worse than showing nothing.
+  // Only applies to numbered built-in slots — custom exercises (string ids)
+  // are the same exercise every week of a phase by construction, no risk there.
+  if(typeof ei==='number'){
+    const curName=dayExs(ph,wk,day)[ei]?.n;
+    const prevName=dayExs(prevPh,prevWk,day)[ei]?.n;
+    if(!curName||!prevName||curName!==prevName)return Array(sets).fill(null);
   }
   const prevDK=dk(prevPh,prevWk,day);
   const prevEK=ek(prevDK,ei);
@@ -2304,7 +2432,8 @@ function reRenderAbs(abk){
   if(!container)return;
   const d=getAbsData(abk);
   const absOpts=['Cable Crunch','Hanging Leg Raise','Hanging Side Oblique','Wood Chopper',
-    'Weighted Crunch','Ab Wheel Rollout','Dragon Flag','Toe Touch','Plank','Stomach Vacuum','Other'];
+    'Weighted Crunch','Ab Wheel Rollout','Dragon Flag','Toe Touch','Plank','Stomach Vacuum',
+    'Russian Twist','Lying Cable Leg Raise','Dead Bug','Other'];
   if(!d.exs||d.exs.length===0){
     container.innerHTML='<div style="font-size:10px;color:var(--m1);padding:4px 0;font-style:italic">No exercises logged yet.</div>';
     return;
@@ -2538,6 +2667,12 @@ function getPrevWeekCalfData(ph,wk,day,ci,sets){
     }
     if(prevWk<0)return Array(sets).fill(null);
   }
+  // Guard: which weekday carries calf work changes between old split (Wed/Fri)
+  // and new split (Tue/Fri) — only show reference data if BOTH weeks actually
+  // have calf work on this exact day.
+  const curCalf=daysFor(ph,wk)[day]?.calf;
+  const prevCalf=daysFor(prevPh,prevWk)[day]?.calf;
+  if(!curCalf||!prevCalf)return Array(sets).fill(null);
   const prevDK=dk(prevPh,prevWk,day);
   return Array.from({length:sets},(_,s)=>ST.logs[`${prevDK}calf${ci}s${s}`]||null);
 }
@@ -2854,21 +2989,21 @@ function generateExportText(){
 
   // Phase completion
   let tot=0,dn=0;
-  for(let w=0;w<ph.weeks;w++)ph.days.forEach((_,d)=>{
+  for(let w=0;w<ph.weeks;w++)daysFor(ST.ph,w).forEach((_,d)=>{
     if(isRest(ST.ph,w,d))return;
     tot++;if(ST.done[dk(ST.ph,w,d)])dn++;
   });
   const phasePct=tot?Math.round(dn/tot*100):0;
 
   // Sessions done per day this week
-  const dayNames=['Mon(Back)','Tue(Chest)','Wed(Legs)','Thu(Delts)','Fri(Arms)'];
-  const thisWkStatus=ph.days.map((_,d)=>ST.done[dk(ST.ph,ST.wk,d)]?'✓':'✗').join(' ');
+  const dayNames=dayNamesFor(ST.ph,ST.wk);
+  const thisWkStatus=daysFor(ST.ph,ST.wk).map((_,d)=>ST.done[dk(ST.ph,ST.wk,d)]?'✓':'✗').join(' ');
 
   // All-time PRs
   const prMap={};
   PHASES.forEach((phase,pIdx)=>{
     for(let wk=0;wk<phase.weeks;wk++){
-      phase.days.forEach((day,d)=>{
+      daysFor(pIdx,wk).forEach((day,d)=>{
         dayExs(pIdx,wk,d).forEach((ex,ei)=>{
           const eff=getEffectiveEx(ex,pIdx,wk,d,ei);
           const KEY=dk(pIdx,wk,d),EK=ek(KEY,ei);
@@ -2923,7 +3058,7 @@ function generateExportText(){
 
   // This week's working sets (all logged, not just best) — compact
   const thisWkSets=[];
-  ph.days.forEach((day,d)=>{
+  daysFor(ST.ph,ST.wk).forEach((day,d)=>{
     const KEY=dk(ST.ph,ST.wk,d);
     const dayLog=[];
     dayExs(ST.ph,ST.wk,d).forEach((ex,ei)=>{
@@ -2995,7 +3130,7 @@ function generateExportText(){
   let hiitDone=0,hiitTot=0,absDone=0,absTot=0;
   PHASES.forEach((phase,pIdx)=>{
     for(let wk=0;wk<phase.weeks;wk++){
-      phase.days.forEach((day,d)=>{
+      daysFor(pIdx,wk).forEach((day,d)=>{
         const KEY2=dk(pIdx,wk,d);
         if(day.hasHiit&&!isRest(pIdx,wk,d)){
           hiitTot++;
@@ -3016,13 +3151,17 @@ function generateExportText(){
 
   const prLines=Object.keys(prMap).length===0?'none':Object.keys(prMap).sort().map(n=>`${n}:${prMap[n].w}kg×${prMap[n].r}`).join(', ');
 
+  const splitLine=usesNewSplit(ST.ph,ST.wk)
+    ?`SPLIT:Mon=Upper+Abs | Tue=Lower+HIIT+Calf | Wed=Push+Abs | Thu=Pull+HIIT | Fri=Legs(Glute/Ham)+Calf+Abs [Meso${MESO_MAP[ST.ph]||1}]`
+    :`SPLIT:Mon=Back+Abs | Tue=Chest+HIIT | Wed=Legs+Calf(B) | Thu=Delts+HIIT | Fri=Arms+Calf(C)+Abs`;
+
   const out=
 `[WORKOUT_SNAPSHOT ${dateStr} — reply in 5-8 bullet points max, no headers, no elaboration]
 USER:Harsh,Gurugram. Cutting ~22-25%BF. Goal:aesthetic(BLS). Stress fracture hx.
-SPLIT:Mon=Back+Abs | Tue=Chest+HIIT | Wed=Legs+Calf(B) | Thu=Delts+HIIT | Fri=Arms+Calf(C)+Abs
+${splitLine}
 PROGRESSION:Upper hit 6×3→+5kg drop to ~4. Lower same. Laterals/FacePull form>load.
 
-POS:${ph.label}${ph.isDeload?'[DELOAD]':''} Wk${ST.wk+1}/${ph.weeks} GW${globalWk} Day${ST.day+1}(${ph.days[ST.day].title})
+POS:${ph.label}${ph.isDeload?'[DELOAD]':''} Wk${ST.wk+1}/${ph.weeks} GW${globalWk} Day${ST.day+1}(${daysFor(ST.ph,ST.wk)[ST.day].title})
 DONE:${phasePct}%(${dn}/${tot}) WK:${thisWkStatus}[M T W T F] HIIT:${hiitDone}/${hiitTot} ABS:${absDone}/${absTot}
 WT:${wtSummary}
 WAIST:${waistSummary}
@@ -3309,7 +3448,11 @@ const GP_EXERCISES=[
   'Leg Press','Single-Leg Dumbbell Calf Raise',
   'Seated Dumbbell Shoulder Press','Cable Lateral Raise','Reverse Pec Deck Fly','Cable Rear Delt Row',
   'Hammer Curl','Overhead DB Triceps Extension','Wrist Curl',
-  'EZ-Bar Curl','Concentration Curl','Cable Curl','EZ-Bar Skull Crusher','Cable Rope Pushdown','Diamond Push-Up'
+  'EZ-Bar Curl','Concentration Curl','Cable Curl','EZ-Bar Skull Crusher','Cable Rope Pushdown','Diamond Push-Up',
+  // New Split (Upper/Lower/Push/Pull/Legs) additions — from Phase 2 Week 5 onward
+  'Dumbbell Incline Fly','Dumbbell Pullover','Lunges','Hip Abduction','High-to-Low Cable Fly','Upright Row',
+  'Dumbbell Shrugs','Single-Arm Overhead DB Extension','Close-Grip Pulldown','Wide-Grip Pulldown',
+  'Lying Cable Curl','Preacher Curl','Sumo Squat','Barbell Squat','Hip Adduction'
 ];
 let gpSelectedEx=GP_EXERCISES[0];
 let gpTooltipDiv=null;
@@ -3331,7 +3474,7 @@ function gpGetHistory(exName){
     for(let wk=0;wk<phase.weeks;wk++){
       gw++;
       let best=null;
-      phase.days.forEach((day,d)=>{
+      daysFor(ph,wk).forEach((day,d)=>{
         dayExs(ph,wk,d).forEach((ex,ei)=>{
           const eff=getEffectiveEx(ex,ph,wk,d,ei);
           if(eff.n!==exName)return;
@@ -3488,7 +3631,7 @@ function gpWeeksWithData(){
     for(let wk=0;wk<phase.weeks;wk++){
       gw++;
       let has=false;
-      phase.days.forEach((day,d)=>{
+      daysFor(ph,wk).forEach((day,d)=>{
         dayExs(ph,wk,d).forEach((ex,ei)=>{
           const KEY=dk(ph,wk,d),EK=ek(KEY,ei);
           for(let s=0;s<ex.sets;s++){if(ST.logs[sk(EK,s)]?.weight)has=true;}
@@ -3505,7 +3648,7 @@ function gpWeekBests(targetGw){
   PHASES.forEach((phase,ph)=>{
     for(let wk=0;wk<phase.weeks;wk++){
       gw++;if(gw!==targetGw)continue;
-      phase.days.forEach((day,d)=>{
+      daysFor(ph,wk).forEach((day,d)=>{
         dayExs(ph,wk,d).forEach((ex,ei)=>{
           const eff=getEffectiveEx(ex,ph,wk,d,ei);
           const KEY=dk(ph,wk,d),EK=ek(KEY,ei);

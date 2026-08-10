@@ -1711,15 +1711,16 @@ function mkNewSplitDays(meso,deload){
   ];
 }
 
-// Week 5 was already trained and logged (Thursday specifically) under the
-// ORIGINAL cutover arrangement — Deadlift on Friday, T-Bar Row first on
-// Thursday, no heavy/light alternation yet. Frozen here exactly as first
-// shipped so Week 5's already-logged Thursday data stays correctly mapped
-// to its exercise slots. Never edit this — it represents real logged history.
-// The updated arrangement above (Deadlift moved to Thursday) applies from
-// Week 6 onward only.
+// Week 5 Thursday was already trained and logged under the ORIGINAL cutover
+// arrangement (T-Bar Row first, no Deadlift, no heavy/light alternation yet).
+// Frozen here exactly as first shipped so that already-logged data stays
+// correctly mapped to its exercise slots. Never edit legacyThu below — it
+// represents real logged history. Friday of Week 5 was NEVER logged, so it
+// carries no such constraint — it stays dynamic (base[4], same as Mon/Tue/Wed)
+// and always reflects whatever Friday's definition currently is above,
+// including the Deadlift move and the RDL/Bulgarian Split Squat additions.
 function mkWeek5LegacyDays(){
-  const base=mkNewSplitDays(1,false); // Mon/Tue/Wed are identical either way
+  const base=mkNewSplitDays(1,false); // Mon/Tue/Wed/Fri all track the live definition
   const legacyThu={title:'PULL',sub:'Day 4 — Thu',hasHiit:true,exs:[
     E('T-Bar Row (Chest-Supported)','main',3,'8–10',true,'Rest 2–3 min',''),
     E('Close-Grip Pulldown','main',3,'10–12',false,'Rest 2–3 min',''),
@@ -1730,13 +1731,7 @@ function mkWeek5LegacyDays(){
     E('Hammer Curl','acc',3,'10–12',false,'Rest 90s',''),
     E('Preacher Curl','acc',3,'10–12',false,'Rest 60s',''),
   ]};
-  const legacyFri={title:'LEGS (GLUTE/HAM)',sub:'Day 5 — Fri',hasAbs:true,calf:'FRIL',exs:[
-    E('Barbell Deadlift','main',3,'5–6',true,'Rest 3–4 min',''),
-    E('Sumo Squat','main',3,'8–10',false,'Rest 2–3 min',''),
-    E('Lying Hamstring Curl','acc',3,'10–12',false,'Rest 90s',''),
-    E('Hip Adduction','acc',3,'12–15',false,'Rest 90s',''),
-  ]};
-  return [base[0],base[1],base[2],legacyThu,legacyFri];
+  return [base[0],base[1],base[2],legacyThu,base[4]];
 }
 const WEEK5_LEGACY_DAYS=mkWeek5LegacyDays();
 

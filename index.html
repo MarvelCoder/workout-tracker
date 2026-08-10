@@ -140,6 +140,8 @@ body{background:var(--bg);color:var(--txt);font-family:'DM Sans',sans-serif;min-
 .t.wu{background:rgba(41,182,246,.12);color:var(--ac3)}
 .t.ok{background:rgba(76,175,80,.12);color:var(--grn)}
 .t.swap{background:rgba(171,71,188,.14);color:var(--pur)}
+.t.heavy{background:rgba(239,83,80,.14);color:var(--red)}
+.t.light{background:rgba(41,182,246,.14);color:var(--ac3)}
 
 /* ── EXERCISE SWAP ── */
 .exsw-toggle{font-size:9px;color:var(--pur);cursor:pointer;margin-top:4px;display:inline-flex;
@@ -1647,7 +1649,7 @@ CALF.FRIL_DL={label:'Leg Day (Deload) — 15 reps',note:'2 × 15 · Rest 60s · 
 // Gym Progress PR history stays continuous instead of fragmenting.
 function mkNewSplitDays(meso,deload){
   const sq  = meso===1?'Hack Squat':'Leg Press';
-  const bss = meso===1?'Bulgarian Split Squat':'Lunges';
+  const bss = meso===1?'Bulgarian Split Squat (Quad Focus)':'Lunges';
   const dip = meso===1?'Weighted Dip (Chest)':'Close-Grip Bench Press';
   const fly = meso===1?'Pec Deck Fly':'High-to-Low Cable Fly';
   const lat = meso===1?'Side Lateral Raise':'Upright Row';
@@ -1689,7 +1691,8 @@ function mkNewSplitDays(meso,deload){
      E(oh,'acc',S,R('10–12'),false,rAccL,''),
    ]},
    {title:'PULL',sub:'Day 4 — Thu',hasHiit:true,exs:[
-     E(row,'main',S,R('8–10'),true,rMain2,''),
+     E('Barbell Deadlift','main',S,R('5–6'),true,rMain,''),
+     E(row,'main',S,R('8–10'),false,rMain2,''),
      E(pd,'main',S,R('10–12'),false,rMain2,''),
      E('Weighted Hyperextension','acc',S,R('12–15'),false,rAcc,''),
      E(rd,'acc',S,R('12–15'),false,rAcc,''),
@@ -1699,13 +1702,64 @@ function mkNewSplitDays(meso,deload){
      E(bic2,'acc',S,R('10–12'),false,rAccL,''),
    ]},
    {title:'LEGS (GLUTE/HAM)',sub:'Day 5 — Fri',hasAbs:true,calf:deload?'FRIL_DL':'FRIL',exs:[
-     E('Barbell Deadlift','main',S,R('5–6'),true,rMain,''),
-     E(sumo,'main',S,R('8–10'),false,rMain2,''),
+     E(sumo,'main',S,R('8–10'),true,rMain2,''),
      E('Lying Hamstring Curl','acc',S,R('10–12'),false,rAcc,''),
+     E('RDL Smith Machine','acc',S,R('10–12'),false,rAcc,''),
+     E('Bulgarian Split Squat (Glute Focus)','acc',S,R('8–10'),false,rAcc,'Forward torso lean, rear-foot elevated — bias glutes over quads'),
      E('Hip Adduction','acc',S,R('12–15'),false,rAcc,''),
    ]},
   ];
 }
+
+// Week 5 was already trained and logged (Thursday specifically) under the
+// ORIGINAL cutover arrangement — Deadlift on Friday, T-Bar Row first on
+// Thursday, no heavy/light alternation yet. Frozen here exactly as first
+// shipped so Week 5's already-logged Thursday data stays correctly mapped
+// to its exercise slots. Never edit this — it represents real logged history.
+// The updated arrangement above (Deadlift moved to Thursday) applies from
+// Week 6 onward only.
+function mkWeek5LegacyDays(){
+  const base=mkNewSplitDays(1,false); // Mon/Tue/Wed are identical either way
+  const legacyThu={title:'PULL',sub:'Day 4 — Thu',hasHiit:true,exs:[
+    E('T-Bar Row (Chest-Supported)','main',3,'8–10',true,'Rest 2–3 min',''),
+    E('Close-Grip Pulldown','main',3,'10–12',false,'Rest 2–3 min',''),
+    E('Weighted Hyperextension','acc',3,'12–15',false,'Rest 90s',''),
+    E('Face Pull','acc',3,'12–15',false,'Rest 90s',''),
+    E('Seated Incline DB Curl','acc',3,'10–12',false,'Rest 90s',''),
+    E('Barbell Curl','acc',3,'8–10',false,'Rest 90s',''),
+    E('Hammer Curl','acc',3,'10–12',false,'Rest 90s',''),
+    E('Preacher Curl','acc',3,'10–12',false,'Rest 60s',''),
+  ]};
+  const legacyFri={title:'LEGS (GLUTE/HAM)',sub:'Day 5 — Fri',hasAbs:true,calf:'FRIL',exs:[
+    E('Barbell Deadlift','main',3,'5–6',true,'Rest 3–4 min',''),
+    E('Sumo Squat','main',3,'8–10',false,'Rest 2–3 min',''),
+    E('Lying Hamstring Curl','acc',3,'10–12',false,'Rest 90s',''),
+    E('Hip Adduction','acc',3,'12–15',false,'Rest 90s',''),
+  ]};
+  return [base[0],base[1],base[2],legacyThu,legacyFri];
+}
+const WEEK5_LEGACY_DAYS=mkWeek5LegacyDays();
+
+// Deadlift heavy/light week alternation — Thursday, from Phase 2 Week 6 onward
+// (Week 5 itself is the frozen legacy layout above, and is also the anchor:
+// the 100kg session confirmed as this cycle's HEAVY week).
+// Deload always overrides: deload's own 2-set/low-rep rules apply, no
+// heavy/light label shown, and deload does NOT consume a tick in the count —
+// the week right after a deload continues the alternation exactly where it
+// left off, so the pattern never drifts because of a deload in between.
+const DEADLIFT_CYCLE={};
+(function buildDeadliftCycle(){
+  let count=0; // even=HEAVY, odd=LIGHT
+  for(let ph=2; ph<PHASES.length; ph++){
+    const startWk=(ph===2)?4:0; // anchor: Phase2 Week5 (wk index 4)
+    for(let wk=startWk; wk<PHASES[ph].weeks; wk++){
+      if(PHASES[ph].isDeload){DEADLIFT_CYCLE[`${ph}_${wk}`]=null;continue;}
+      DEADLIFT_CYCLE[`${ph}_${wk}`]=(count%2===0)?'HEAVY':'LIGHT';
+      count++;
+    }
+  }
+})();
+function deadliftCycleLabel(ph,wk){return DEADLIFT_CYCLE[`${ph}_${wk}`]||null;}
 
 // Precomputed — meso 1/2 × work/deload
 const NEW_SPLIT_DAYS={
@@ -1716,12 +1770,14 @@ const NEW_SPLIT_DAYS={
 // THE single source of truth for "which 5 days apply to this phase+week".
 // ph<2            → Phase 1 / Deload 1, untouched.
 // ph===2, wk<4     → Phase 2 weeks 1–4, untouched (existing A/B content).
-// ph===2, wk>=4    → Phase 2 weeks 5–8, New Split, meso 1 (the initial cutover).
+// ph===2, wk===4   → Phase 2 Week 5 — frozen legacy layout (already logged).
+// ph===2, wk>=5    → Phase 2 weeks 6–8, updated arrangement (Deadlift/Thu).
 // ph>=3            → New Split, meso from MESO_MAP, deload variant if applicable.
 function daysFor(ph,wk){
   if(ph<2)return PHASES[ph].days;
   if(ph===2){
     if(wk<4)return PHASES[2].days;
+    if(wk===4)return WEEK5_LEGACY_DAYS;
     return NEW_SPLIT_DAYS[1].work;
   }
   const meso=MESO_MAP[ph];
@@ -2283,6 +2339,7 @@ function renderEx(ex,ei,KEY){
     <div class="ectags">
       ${ex.wu?'<span class="t wu">W/UP</span>':''}
       <span class="t ${ex.tag}">${ex.tag==='main'?'MAIN':ex.tag==='acc'?'ACCESS.':'OPTIONAL'}</span>
+      ${ex.n==='Barbell Deadlift'&&deadliftCycleLabel(ph,wk)?`<span class="t ${deadliftCycleLabel(ph,wk)==='HEAVY'?'heavy':'light'}">${deadliftCycleLabel(ph,wk)==='HEAVY'?'HEAVY WEEK':'LIGHT WEEK ~70-80%'}</span>`:''}
       ${isSwapped?'<span class="t swap">SWAPPED</span>':''}
       ${allDone?`<span class="t ok" id="dt_${EK}">✓</span>`:''}
     </div>
@@ -3467,7 +3524,8 @@ const GP_EXERCISES=[
   // New Split (Upper/Lower/Push/Pull/Legs) additions — from Phase 2 Week 5 onward
   'Dumbbell Incline Fly','Dumbbell Pullover','Lunges','Hip Abduction','High-to-Low Cable Fly','Upright Row',
   'Dumbbell Shrugs','Single-Arm Overhead DB Extension','Close-Grip Pulldown','Wide-Grip Pulldown',
-  'Lying Cable Curl','Preacher Curl','Sumo Squat','Barbell Squat','Hip Adduction'
+  'Lying Cable Curl','Preacher Curl','Sumo Squat','Barbell Squat','Hip Adduction',
+  'RDL Smith Machine','Bulgarian Split Squat (Quad Focus)','Bulgarian Split Squat (Glute Focus)'
 ];
 let gpSelectedEx=GP_EXERCISES[0];
 let gpTooltipDiv=null;
